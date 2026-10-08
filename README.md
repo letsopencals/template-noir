@@ -2,9 +2,9 @@
 
 A production-ready rental website for a premium car-hire business. Built with **Next.js 15**, **Tailwind CSS v4**, and the **Opencals Storefront SDK**.
 
-**[View Live Demo →](https://template-noir.vercel.app)** *(demo URL is a placeholder until the first deploy)*
+**[View Live Demo →](https://template-noir.vercel.app)**
 
-<!-- ![NOIR Drive — fleet, car page and the multi-day booking flow, on desktop and mobile](docs/cover.png) -->
+![NOIR Drive — fleet, car page and the multi-day booking flow, on desktop and mobile](docs/cover.png)
 
 Black, cinematic and heavily animated: near-black surfaces, one champagne accent, an expanded automotive display face and monospaced specs. Set in **Dubai** (AED, `Asia/Dubai`) with an all-black fleet of twelve supercars, SUVs and grand tourers booked **by the day**, delivered to the customer's door, plus **chauffeur packages** with real drivers. Full storefront included — fleet, car pages, rates, multi-day booking, chauffeur flow, checkout, customer accounts — wired up out of the box. MIT licensed: clone it, rebrand it, ship it.
 
@@ -36,6 +36,14 @@ Then set `url` in `lib/site-config.ts` to your domain (it drives the sitemap, ca
 
 ---
 
+## The Storefront
+
+![NOIR Drive homepage — black, cinematic, champagne accent, with the quick booking bar](docs/homepage-hero.png)
+
+![NOIR Drive on mobile — home, car page and the booking flow](docs/mobile.png)
+
+---
+
 ## What's Included
 
 ### The Fleet
@@ -43,6 +51,12 @@ Then set `url` in `lib/site-config.ts` to your domain (it drives the sitemap, ca
 - **`/fleet`** — category filters from your collections (Supercars, SUVs, Grand tourers), sort by price, and **"available for your dates"**, which filters the grid against live availability.
 - **`/fleet/[slug]`** — a scroll-driven hero, a spec strip that counts up (power, 0–100, top speed, seats), a gallery, what's included (km per day, insurance, delivery), the deposit and driver requirements, a two-month **availability calendar** with booked days struck through, and a sticky booking card with a live estimate. `Product` + `Offer` structured data.
 - **`/rates`** — the full rates table (daily rate, deposit, km per day) where the hovered row swaps the car image, plus chauffeur rates and a "before you book" grid.
+
+![The fleet grid with category filters and daily rates](docs/fleet.png)
+
+![A car page — scroll-driven hero, specs and the sticky booking card](docs/car-page.png)
+
+![The rates table — the hovered row swaps the car image](docs/rates.png)
 
 ### Multi-Day Booking
 
@@ -55,9 +69,13 @@ Then set `url` in `lib/site-config.ts` to your domain (it drives the sitemap, ca
 
 A sticky estimate bar animates the total as the customer chooses. Price is always **days × daily rate + extras**, the same maths the engine charges.
 
+![Booking a car — the range calendar, handover windows and the live summary rail](docs/book-a-car.png)
+
 ### Chauffeur
 
 **`/chauffeur`** lists the packages (airport transfer, by the hour, an evening in Dubai, a day in Abu Dhabi). Each books through the classic staff flow — when → driver → extras → details → pay — with a *preferred car* request.
+
+![Chauffeur packages](docs/chauffeur.png)
 
 ### Customer Accounts
 
