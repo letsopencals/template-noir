@@ -1,0 +1,432 @@
+@import 'tailwindcss';
+
+/*
+ * NOIR Drive — premium black luxury car rental (Dubai).
+ *
+ * Token names are kept from the shared template scaffold so components port
+ * cleanly between templates; the VALUES are the NOIR palette:
+ *   --color-bg*       near-black page surfaces (page + deep)
+ *   --color-surface*  raised panels (graphite steps)
+ *   --color-ink*      text (warm ivory → stone → dim)
+ *   --color-primary*  champagne (CTAs, links, accents)
+ *   --color-tint*     dark champagne chip / highlight tints
+ *   --color-brass*    champagne secondary accent (ratings, selected states)
+ *   --color-sand      section background a touch off the page black
+ *   --color-sage*     cool steel secondary (rarely used; kept for scaffold parity)
+ *   --color-line*     hairline borders on black
+ *
+ * Fonts are loaded with next/font in app/layout.tsx, which exposes
+ * --font-archivo / --font-inter-tight / --font-geist-mono on <html>.
+ *
+ * FOUNDATION FILE — owned by the template foundation. Page agents should raise
+ * token changes rather than edit this file.
+ */
+@theme {
+	/* Surfaces */
+	--color-bg: #050505;
+	--color-bg-deep: #000000;
+	--color-surface: #0B0B0C;
+	--color-surface-2: #121214;
+	--color-surface-3: #1A1A1D;
+
+	/* Ink */
+	--color-ink: #F4F1EA;
+	--color-ink-muted: #A19D94;
+	--color-ink-dim: #5E5B55;
+
+	/* Backdrop black (bg-charcoal/50 for modal scrims) */
+	--color-charcoal: #000000;
+
+	/* Accent — champagne */
+	--color-primary: #C8A96B;
+	--color-primary-bright: #E2C793;
+	--color-primary-dark: #8E7444;
+
+	/* Champagne tints for chips / highlights */
+	--color-tint: #17130B;
+	--color-tint-strong: #241D10;
+
+	/* Secondary champagne accent */
+	--color-brass: #D9BC82;
+	--color-brass-soft: #17130B;
+
+	--color-sand: #08080A;
+
+	/* Cool steel secondary */
+	--color-sage: #8A929A;
+	--color-sage-bright: #B4BBC2;
+	--color-leaf: #5C636A;
+	--color-leaf-deep: #3A3F44;
+	--color-sage-soft: #121417;
+
+	--color-line: rgba(255, 255, 255, 0.08);
+	--color-line-strong: rgba(255, 255, 255, 0.16);
+
+	/* Typography */
+	--font-display: var(--font-archivo), 'Archivo', system-ui, sans-serif;
+	--font-body: var(--font-inter-tight), 'Inter Tight', system-ui, sans-serif;
+	--font-mono: var(--font-geist-mono), 'Geist Mono', ui-monospace, monospace;
+
+	/* Squared, automotive geometry — every rounded-* utility collapses to 2px.
+	 * rounded-full is untouched (avatars, status dots). */
+	--radius-xs: 2px;
+	--radius-sm: 2px;
+	--radius-md: 2px;
+	--radius-lg: 2px;
+	--radius-xl: 2px;
+	--radius-2xl: 2px;
+	--radius-3xl: 3px;
+	--radius-4xl: 3px;
+
+	/* Motion */
+	--ease-noir: cubic-bezier(0.22, 1, 0.36, 1);
+	--animate-fade-up: fade-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+	--animate-fade-in: fade-in 0.9s ease both;
+	--animate-marquee: marquee 40s linear infinite;
+	--animate-pulse-primary: pulse-primary 1.8s ease-in-out infinite;
+	--animate-sway: sway 6s ease-in-out infinite;
+	--animate-sway-slow: sway 9s ease-in-out infinite;
+	--animate-float-soft: float-soft 7s ease-in-out infinite;
+	--animate-light-drift: light-drift 12s ease-in-out infinite;
+	--animate-grow-line: grow-line 1.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+
+	/* Spacing */
+	--spacing-section: 9rem;
+	--spacing-section-sm: 5.5rem;
+}
+
+/* Base */
+html {
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	background-color: var(--color-bg);
+}
+
+/* Lenis owns smooth scrolling when active; native smooth otherwise. */
+html:not(.lenis) {
+	scroll-behavior: smooth;
+}
+html.lenis,
+html.lenis body {
+	height: auto;
+}
+.lenis.lenis-stopped {
+	overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html:not(.lenis) {
+		scroll-behavior: auto;
+	}
+}
+
+body {
+	font-family: var(--font-body);
+	color: var(--color-ink);
+	background-color: var(--color-bg);
+	font-feature-settings: 'ss01', 'cv11';
+}
+
+::selection {
+	background-color: var(--color-primary);
+	color: #000000;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+::-webkit-scrollbar-track {
+	background: var(--color-bg-deep);
+}
+::-webkit-scrollbar-thumb {
+	background: var(--color-surface-3);
+	border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+	background: var(--color-ink-dim);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+	display: none;
+}
+.no-scrollbar {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+
+/* ---------------------------------------------------------------- Typography */
+
+/* Wide, expanded display — Archivo at wdth 125. */
+.heading-display {
+	font-family: var(--font-display);
+	font-stretch: 125%;
+	font-weight: 600;
+	line-height: 0.98;
+	letter-spacing: -0.015em;
+	text-transform: uppercase;
+}
+
+/* Kept for scaffold parity: an expanded light display (no italics in NOIR). */
+.heading-display-italic {
+	font-family: var(--font-display);
+	font-stretch: 125%;
+	font-weight: 300;
+	line-height: 1;
+	letter-spacing: -0.01em;
+}
+
+/* Small letterspaced uppercase label ("MODEL YEAR", "PER DAY"). */
+.eyebrow {
+	font-family: var(--font-body);
+	font-size: 0.68rem;
+	font-weight: 500;
+	letter-spacing: 0.28em;
+	text-transform: uppercase;
+	color: var(--color-ink-muted);
+}
+
+/* Specs, prices, counters. */
+.tabular {
+	font-family: var(--font-mono);
+	font-variant-numeric: tabular-nums;
+	font-feature-settings: 'tnum';
+}
+
+/* ------------------------------------------------------------------ Surfaces */
+
+/* Graceful image fallback — every image container gets this so a missing file
+ * still reads as a dark, lit studio rather than a broken box. Uses
+ * background-image (not the shorthand) so bg-cover/bg-center still apply. */
+.image-placeholder {
+	background-color: var(--color-surface);
+	background-image:
+		radial-gradient(70% 60% at 50% 38%, rgba(200, 169, 107, 0.10) 0%, rgba(200, 169, 107, 0) 60%),
+		radial-gradient(120% 80% at 50% 120%, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 55%),
+		linear-gradient(180deg, #0E0E10 0%, #050505 100%);
+}
+
+.hr-accent {
+	height: 1px;
+	background-color: var(--color-primary);
+	border: none;
+}
+
+/* Hairline rule */
+.hairline {
+	height: 1px;
+	background: var(--color-line);
+	border: none;
+}
+
+/* Dotted leader ("Cullinan ........ AED 6,500") */
+.leader-line {
+	flex: 1;
+	margin: 0 1rem;
+	border-bottom: 1px dotted var(--color-line-strong);
+	transform: translateY(-4px);
+}
+
+.link-underline {
+	position: relative;
+	display: inline-block;
+}
+.link-underline::after {
+	content: '';
+	position: absolute;
+	bottom: -3px;
+	left: 0;
+	width: 100%;
+	height: 1px;
+	background-color: currentColor;
+	transform: scaleX(0);
+	transform-origin: right;
+	transition: transform 0.5s var(--ease-noir);
+}
+.link-underline:hover::after {
+	transform: scaleX(1);
+	transform-origin: left;
+}
+
+/* Hairline grid texture */
+.noise-overlay {
+	position: relative;
+}
+.noise-overlay::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	opacity: 0.35;
+	background-image:
+		linear-gradient(var(--color-line) 1px, transparent 1px),
+		linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
+	background-size: 64px 64px;
+	pointer-events: none;
+	z-index: 1;
+}
+
+/* Film grain for photography-heavy sections */
+.grain::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	opacity: 0.06;
+	background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+.writing-vertical {
+	writing-mode: vertical-rl;
+	transform: rotate(180deg);
+}
+
+.card-shadow {
+	box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 20px 40px -24px rgba(0, 0, 0, 0.8);
+}
+.card-shadow-lg {
+	box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 40px 80px -32px rgba(0, 0, 0, 0.9);
+}
+
+/* Glass — used sparingly: the scrolled header, floating booking bars. */
+.glass {
+	background: rgba(11, 11, 12, 0.6);
+	backdrop-filter: blur(18px) saturate(140%);
+	-webkit-backdrop-filter: blur(18px) saturate(140%);
+	border: 1px solid var(--color-line);
+}
+.glass-strong {
+	background: rgba(5, 5, 5, 0.82);
+	backdrop-filter: blur(24px) saturate(160%);
+	-webkit-backdrop-filter: blur(24px) saturate(160%);
+	border: 1px solid var(--color-line-strong);
+}
+.glass-dark {
+	background: rgba(255, 255, 255, 0.04);
+	backdrop-filter: blur(16px) saturate(140%);
+	-webkit-backdrop-filter: blur(16px) saturate(140%);
+	border: 1px solid var(--color-line);
+}
+.glass-nav {
+	background: rgba(0, 0, 0, 0.6);
+	backdrop-filter: blur(20px) saturate(160%);
+	-webkit-backdrop-filter: blur(20px) saturate(160%);
+	border-bottom: 1px solid var(--color-line);
+}
+
+/* Soft champagne glow behind hero / CTA sections */
+.aura-blue,
+.aura-organic {
+	background:
+		radial-gradient(55% 50% at 75% 15%, rgba(200, 169, 107, 0.10) 0%, rgba(200, 169, 107, 0) 60%),
+		radial-gradient(50% 50% at 10% 90%, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0) 55%);
+}
+
+.gradient-leaf {
+	background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-3) 100%);
+}
+.gradient-medical {
+	background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 55%, var(--color-primary-bright) 120%);
+}
+
+/* Bottom fade used over hero photography */
+.scrim-bottom {
+	background: linear-gradient(180deg, rgba(5, 5, 5, 0) 0%, rgba(5, 5, 5, 0.6) 60%, #050505 100%);
+}
+
+/* Category tag */
+.chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	border-radius: 2px;
+	padding: 0.35rem 0.7rem;
+	font-size: 0.64rem;
+	font-weight: 500;
+	letter-spacing: 0.22em;
+	text-transform: uppercase;
+	border: 1px solid var(--color-line-strong);
+	color: var(--color-primary);
+}
+
+/* ----------------------------------------------------------------- Keyframes */
+@keyframes fade-up {
+	from {
+		opacity: 0;
+		transform: translateY(24px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+@keyframes fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+@keyframes marquee {
+	from {
+		transform: translateX(0);
+	}
+	to {
+		transform: translateX(-50%);
+	}
+}
+@keyframes pulse-primary {
+	0%,
+	100% {
+		box-shadow: 0 0 0 0 rgba(200, 169, 107, 0.4);
+	}
+	50% {
+		box-shadow: 0 0 0 8px rgba(200, 169, 107, 0);
+	}
+}
+@keyframes sway {
+	0%,
+	100% {
+		transform: rotate(-1.6deg);
+	}
+	50% {
+		transform: rotate(1.8deg);
+	}
+}
+@keyframes float-soft {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-10px);
+	}
+}
+@keyframes light-drift {
+	0%,
+	100% {
+		opacity: 0.35;
+		transform: translateX(-2%) skewX(-6deg);
+	}
+	50% {
+		opacity: 0.6;
+		transform: translateX(2%) skewX(-6deg);
+	}
+}
+@keyframes grow-line {
+	from {
+		stroke-dashoffset: var(--line-length, 1000);
+	}
+	to {
+		stroke-dashoffset: 0;
+	}
+}
+
+/* Reduced motion: stop ambient loops (framer components handle their own). */
+@media (prefers-reduced-motion: reduce) {
+	.motion-safe-only,
+	.animate-marquee {
+		animation: none !important;
+	}
+}
