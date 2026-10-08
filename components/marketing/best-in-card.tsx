@@ -10,7 +10,7 @@ export interface BestInCardProps {
 	slug: string;
 	title: string;
 	tagline: string | null;
-	image: string;
+	image: string | null;
 	pricePerDay: number | null;
 	currency: string;
 	routeTitle: string;

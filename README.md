@@ -168,7 +168,7 @@ Every `rounded-*` utility collapses to 2px for the squared, automotive look.
 
 ### Imagery
 
-Every image sits in an `.image-placeholder` container and renders through `SafeImage`, so a missing file falls back to a dark, lit gradient instead of a broken box. Slots: `public/images/fleet/<slug>{,-front,-interior,-wheel}.jpg`, `public/images/{lifestyle,routes,chauffeur}/` and an optional `public/videos/hero.mp4`. See **`public/images/PLACEHOLDERS.md`** for filenames and sizes. Product photos in the booking flow come from your Opencals store.
+Every image sits in an `.image-placeholder` container and renders through `SafeImage`, so a missing file falls back to a dark, lit gradient instead of a broken box. **Car and chauffeur photos, the home hero cover and the logo come from your Opencals store**: product images (the default one first, the rest form the car gallery), staff photos, and the storefront banner and logo. Change them in the dashboard, not in the code. Only editorial art ships in `public/images/{lifestyle,routes,chauffeur}/`, plus an optional `public/videos/hero.mp4`. See **`public/images/PLACEHOLDERS.md`**.
 
 ---
 

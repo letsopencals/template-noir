@@ -12,7 +12,7 @@ export function toHomeCar(car: FleetCar): HomeCar {
 		currency: car.currency,
 		categoryLabel: car.categoryLabel,
 		tagline: car.content?.tagline ?? null,
-		image: car.images.side,
+		image: car.image,
 	};
 }
 
@@ -32,7 +32,7 @@ export function toSpotlightCar(fleet: FleetCar[]): SpotlightCar | null {
 		fullName: live?.title ?? copy.fullName,
 		tagline: content.tagline,
 		engine: content.engine,
-		image: content.images.side,
+		image: live?.image ?? null,
 		hp: content.hp,
 		zeroToHundred: content.zeroToHundred,
 		topSpeed: content.topSpeed,

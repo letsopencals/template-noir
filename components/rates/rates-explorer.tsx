@@ -215,7 +215,7 @@ function RateStage({ cars, active }: { cars: CarCardData[]; active: number }) {
 							transition={reduce ? LAYER_REDUCED : LAYER_TRANSITION}
 						>
 							<SafeImage
-								src={item.images.side}
+								src={item.image}
 								alt={on ? item.title : ''}
 								fill
 								sizes="(min-width: 1024px) 40vw, 1px"
@@ -282,7 +282,7 @@ function RateCard({ car }: { car: CarCardData }) {
 		>
 			<div className="image-placeholder relative aspect-[16/9] overflow-hidden">
 				<SafeImage
-					src={car.images.side}
+					src={car.image}
 					alt={car.title}
 					fill
 					sizes="(min-width: 640px) 50vw, 100vw"

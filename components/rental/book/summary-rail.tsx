@@ -49,7 +49,7 @@ export const SummaryRail = memo(function SummaryRail({
 	return (
 		<aside aria-label="Booking summary" className="sticky top-28 border border-[var(--color-line)] bg-[var(--color-surface)]">
 			<div className="image-placeholder relative aspect-[16/9] overflow-hidden border-b border-[var(--color-line)]">
-				<SafeImage src={car.images.front} alt={car.title} fill sizes="380px" className="object-cover" />
+				<SafeImage src={car.gallery[1] ?? car.image} alt={car.title} fill sizes="380px" className="object-cover" />
 			</div>
 			<div className="space-y-6 px-6 py-6">
 				<div>

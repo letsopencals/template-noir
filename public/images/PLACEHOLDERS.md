@@ -8,19 +8,23 @@ To add one, drop a file at the exact path below. No code change needed.
 Art direction: black or charcoal studio sweep, low-key light, a single champagne
 rim light, no plates or people's faces, and no dealer branding.
 
-## Fleet (`/images/fleet/`), path pattern from `carImages(slug)` in `lib/site-config.ts`
+## Car and chauffeur photos come from your store, not from this folder
 
-| File | Size | Use |
+Car photos, chauffeur package photos, driver portraits, the logo and the home
+hero cover are managed in the Opencals dashboard, not in the template:
+
+| What | Where in the dashboard | Used for |
 |---|---|---|
-| `<slug>.jpg` | 2000×1125 (16:9) | Side profile on the sweep. Cards, hero and the store product image |
-| `<slug>-front.jpg` | 2000×1125 | Front three-quarter view |
-| `<slug>-interior.jpg` | 2000×1500 or 2000×1125 | Cabin |
-| `<slug>-wheel.jpg` | 1600×1600 or 1600×2000 | Wheel, brake or badge detail |
+| Product images | Products → a car → Images. The default image is the side profile | Fleet cards, car hero, quick-bar thumbnails, booking pages |
+| Further product images | Same list, after the default | The car page "In detail" gallery and lightbox, journal stories, JSON-LD |
+| Staff photo | Staff → a chauffeur | Driver picker |
+| Banner | Storefront → customisation | Home hero cover (the video poster) and JSON-LD `image` |
+| Logo | Storefront → customisation | JSON-LD `logo` (the header wordmark is typographic) |
 
-Slugs: lamborghini-revuelto, ferrari-purosangue, rolls-royce-cullinan,
-rolls-royce-spectre, mclaren-750s, lamborghini-urus-se, ferrari-12cilindri,
-bentley-continental-gt, mercedes-amg-g63, porsche-911-turbo-s, aston-martin-db12,
-range-rover-sv.
+Add, swap or reorder photos there and the site follows; no deploy needed beyond
+cache revalidation. Art direction for car shots: a 16:9 side profile on a black
+or charcoal studio sweep as the default, then front three-quarter, cabin and
+wheel detail. The `car_rental` seed dataset ships with this set.
 
 ## Routes (`/images/routes/`), 2400×1350
 
@@ -30,7 +34,6 @@ jebel-jais.jpg, hatta-dam.jpg, abu-dhabi-corniche.jpg, liwa-dunes.jpg, al-qudra.
 
 | File | Size | Use |
 |---|---|---|
-| `hero.jpg` | 2560×1440 | Home hero still, also the poster for the video |
 | `garage.jpg` | 2400×1600 | About page and the Al Quoz garage |
 | `og.jpg` | 1200×630 | Open Graph and Twitter card |
 | `key-handover.jpg` | 1600×2000 or 2400×1600 | Details gallery, how it works, and the sign-in / account side panel |
@@ -51,10 +54,8 @@ your own sections): `hero-night.jpg`, `palm-jumeirah-dusk.jpg`,
 | `airport-meet.jpg` | 2400×1600 | Airport meet-and-greet (delivery and chauffeur pages) |
 | `rear-cabin.jpg` | 2400×1600 | Chauffeur page detail |
 
-Package images (`chauffeur-airport-transfer.jpg`, `chauffeur-by-the-hour.jpg`,
-`chauffeur-evening-in-dubai.jpg`, `chauffeur-day-in-abu-dhabi.jpg`) are copies
-of the seed dataset's product images; in the live booking flow product photos
-come from your Opencals store.
+These are editorial scenes. Package photos are the chauffeur products' own
+images in the store.
 
 ## Optional video
 

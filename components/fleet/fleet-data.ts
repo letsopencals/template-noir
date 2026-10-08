@@ -1,5 +1,5 @@
 import type { FleetCar } from '@/lib/server-data';
-import type { CarCategory, CarContent, CarImages } from '@/lib/site-config';
+import type { CarCategory, CarContent } from '@/lib/site-config';
 import { formatWholePrice } from '@/lib/format';
 
 /**
@@ -16,7 +16,10 @@ export interface CarCardData {
 	category: CarCategory | null;
 	categoryLabel: string | null;
 	content: CarContent | null;
-	images: CarImages;
+	/** Default product image, or null (renders the dark placeholder). */
+	image: string | null;
+	/** Every product image, default first (from the store, not the template). */
+	gallery: string[];
 	/** Longest rental in whole days, or null for unlimited. */
 	maxDays: number | null;
 }
@@ -33,7 +36,8 @@ export function toCarCard(car: FleetCar): CarCardData {
 		category: car.category,
 		categoryLabel: car.categoryLabel,
 		content: car.content,
-		images: car.images,
+		image: car.image,
+		gallery: car.gallery,
 		maxDays: car.maxDuration > 0 ? Math.max(1, Math.floor(car.maxDuration / DAY_SECONDS)) : null,
 	};
 }

@@ -21,7 +21,7 @@ export interface SpotlightCar {
 	fullName: string;
 	tagline: string;
 	engine: string;
-	image: string;
+	image: string | null;
 	hp: number;
 	zeroToHundred: number;
 	topSpeed: number;

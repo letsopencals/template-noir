@@ -9,7 +9,8 @@ import {
 	type ProductCollectionResponse,
 } from '@opencals/storefront-sdk';
 import { publicPayload } from '@/lib/public-payload';
-import { fleetContent, siteConfig, carImages, type CarCategory, type CarContent, type CarImages } from '@/lib/site-config';
+import { fleetContent, siteConfig, type CarCategory, type CarContent } from '@/lib/site-config';
+import { getListItemGallery } from '@/lib/format';
 
 /**
  * Server-only data readers. Each is wrapped in React.cache() so repeated calls
@@ -28,6 +29,15 @@ export const getStoreSettings = cache(async (): Promise<StorePublicSettings | nu
 		return null;
 	}
 });
+
+/**
+ * The store's logo and banner (cover), as set under Storefront customisation in
+ * the dashboard. Null when not set or the settings can't be loaded.
+ */
+export function storeImages(settings: StorePublicSettings | null): { logo: string | null; banner: string | null } {
+	const s = settings?.storefrontSettings;
+	return { logo: s?.logoImage?.url ?? null, banner: s?.bannerImage?.url ?? null };
+}
 
 export const getProducts = cache(
 	async (locationId?: string): Promise<ProductListItemResponse[]> => {
@@ -111,14 +121,10 @@ export interface FleetCar {
 	categoryLabel: string | null;
 	/** Editorial specs; null when the slug has no entry in `fleetContent`. */
 	content: CarContent | null;
-	/**
-	 * Image set. Local paths from `fleetContent` when present; otherwise every
-	 * angle falls back to the product image from the store (or the expected
-	 * local path, which degrades to the dark placeholder if missing).
-	 */
-	images: CarImages;
-	/** The store's own product image URL, if any. */
-	apiImage: string | null;
+	/** The product's default image (a side profile in the seed), or null. */
+	image: string | null;
+	/** Every product image, default first. Managed in the dashboard, not the template. */
+	gallery: string[];
 	/** The raw list item (variants, locations, staff) for the booking flow. */
 	product: ProductListItemResponse;
 }
@@ -142,16 +148,7 @@ function toFleetCar(
 	currency: string,
 ): FleetCar {
 	const content = fleetContent[product.slug] ?? null;
-	const apiImage = product.image?.url ?? null;
-	const fallback = carImages(product.slug);
-	const images: CarImages = content
-		? content.images
-		: {
-				side: apiImage ?? fallback.side,
-				front: apiImage ?? fallback.front,
-				interior: apiImage ?? fallback.interior,
-				wheel: apiImage ?? fallback.wheel,
-			};
+	const gallery = getListItemGallery(product);
 	const category = categoryFor(product.id, product.slug, collections);
 	return {
 		id: product.id,
@@ -165,8 +162,8 @@ function toFleetCar(
 		category,
 		categoryLabel: siteConfig.categories.find((c) => c.slug === category)?.label ?? null,
 		content,
-		images,
-		apiImage,
+		image: gallery[0] ?? null,
+		gallery,
 		product,
 	};
 }

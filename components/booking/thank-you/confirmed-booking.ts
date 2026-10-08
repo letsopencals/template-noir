@@ -1,6 +1,7 @@
 import type { OrderDetailAppointment } from '@opencals/storefront-sdk';
 import { fleetContent, siteConfig } from '@/lib/site-config';
 import { localMidnight } from '@/lib/rental';
+import { getProductImage } from '@/lib/format';
 
 /** Display model for one confirmed appointment on /thank-you (rental or chauffeur). */
 export interface ConfirmedBooking {
@@ -54,7 +55,7 @@ export function toConfirmedBooking(a: OrderDetailAppointment): ConfirmedBooking 
 		id: a.id,
 		kind: content ? 'rental' : 'chauffeur',
 		title: a.product?.title ?? 'Booking',
-		image: content ? content.images.front : (a.product?.image?.url ?? (slug.startsWith('chauffeur-') ? `/images/chauffeur/${slug}.jpg` : null)),
+		image: getProductImage(a.product),
 		delivered,
 		from: a.from,
 		to: a.to,

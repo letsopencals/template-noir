@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 		openGraph: {
 			title: `${car.title} | ${siteConfig.name}`,
 			description,
-			images: [{ url: car.images.side, alt: car.title }],
+			images: car.image ? [{ url: car.image, alt: car.title }] : undefined,
 		},
 	};
 }
@@ -63,7 +63,7 @@ export default async function CarPage({ params }: Params) {
 					<p className="max-w-3xl text-[clamp(1.15rem,1.8vw,1.5rem)] leading-relaxed text-[var(--color-ink)]">{intro}</p>
 				</div>
 			) : null}
-			<CarGallery title={car.title} images={car.images} />
+			<CarGallery title={car.title} images={car.gallery.slice(1)} />
 			<Suspense fallback={<CarBooking car={car}>{terms}</CarBooking>}>
 				<CarBookingFromParams car={car}>{terms}</CarBookingFromParams>
 			</Suspense>

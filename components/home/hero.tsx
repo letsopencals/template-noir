@@ -18,6 +18,8 @@ export interface HeroProps {
 	cars: HomeCar[];
 	/** The car that drives in under the wordmark (usually the flagship). */
 	lead: HomeCar | null;
+	/** Poster behind the video: the store's banner image from the dashboard. */
+	cover: string | null;
 }
 
 /**
@@ -26,14 +28,14 @@ export interface HeroProps {
  * its lower edge, and the quick booking bar. Directly beneath, on the black
  * "stage", the lead car drives in with its name and daily price.
  */
-export function Hero({ cars, lead }: HeroProps) {
+export function Hero({ cars, lead, cover }: HeroProps) {
 	const { hero, logo, contact } = siteConfig;
 
 	return (
 		<section className="relative isolate overflow-hidden bg-[var(--color-bg)]">
 			{/* ---------------------------------------------------- Viewport 1 */}
 			<div className="relative flex min-h-[100svh] flex-col">
-				<HeroVideo src={hero.video} poster={hero.image} />
+				<HeroVideo src={hero.video} poster={cover} />
 				<div aria-hidden className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,5,5,0.7)_0%,rgba(5,5,5,0.15)_35%,rgba(5,5,5,0.55)_70%,#050505_100%)]" />
 				<div aria-hidden className="grain absolute inset-0" />
 

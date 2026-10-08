@@ -96,7 +96,7 @@ composes the smaller ones (`hooks/use-booking-flow.ts`).
 ## NOIR Drive: luxury car rental (Dubai, AED)
 
 ### Foundation files (owned by the template foundation; raise changes, don't fork them)
-`lib/site-config.ts` (all copy and the 12-car `fleetContent`), `app/globals.css`
+`lib/site-config.ts` (all copy and the 12-car `fleetContent` specs), `app/globals.css`
 (tokens and utilities), `app/layout.tsx` (fonts, providers, JSON-LD AutoRental),
 `app/template.tsx`, `components/layout/{header,footer,menu-overlay,wordmark}.tsx`,
 `components/motion/*`, `components/ui/{button,safe-image,page-heading}.tsx`,
@@ -110,7 +110,13 @@ composes the smaller ones (`hooks/use-booking-flow.ts`).
   `rounded-*` collapses to 2px.
 - **Images:** every image sits inside an `.image-placeholder` container and
   renders through `SafeImage`, which hides on error or a missing src so the dark
-  gradient shows. Slots are listed in `public/images/PLACEHOLDERS.md`.
+  gradient shows. **Car, package and driver photos, the hero cover and the logo
+  come from the store, never from `public/`.** `FleetCar.image` is the product's
+  default image and `FleetCar.gallery` is its full image set (default first, via
+  `getProductGallery` in `lib/format.ts`; the list response carries the set on
+  the product's own variant). `storeImages(settings)` in `server-data.ts` gives
+  the storefront banner (hero poster) and logo. Only editorial art (routes,
+  lifestyle, chauffeur scenes) lives in `public/images/`; see `PLACEHOLDERS.md`.
 - **Motion:** use `components/motion/*` (Reveal, RevealText, RevealImage,
   ParallaxImage, CountUp, Marquee, MagneticButton, DriveIn, PageTransition,
   ScrollProgress, SmoothScroll/useSmoothScroll). Every component has a
@@ -138,7 +144,7 @@ Each car is one product with a 1-day base duration (86400 s),
 schedule. N days = N base units = N × daily price. All rental dates use
 `siteConfig.timezone` (`Asia/Dubai`); `TimezoneProvider` defaults to it.
 - Data: `getFleet()` / `getCar(slug)` in `server-data.ts` merge API products
-  with `fleetContent[slug]` (specs, deposit, km/day, min age). Client
+  (title, price, photos) with `fleetContent[slug]` (specs, deposit, km/day, min age). Client
   availability comes from `/api/products/[slug]/ranges?from&to` via
   `hooks/use-car-ranges.ts`, which returns merged UTC ranges.
 - Fit checks happen on the client with `lib/rental.ts` (`fitsDates`,

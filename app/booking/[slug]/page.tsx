@@ -14,7 +14,7 @@ export default async function BookingPage({ params }: { params: Promise<{ slug: 
 	const cars: PreferredCarOption[] = fleet.map((car) => ({
 		slug: car.slug,
 		title: car.title,
-		image: car.images.side ?? car.images.front ?? null,
+		image: car.image,
 	}));
 
 	return <BookingView slug={slug} initialProduct={product ? publicProduct(product) : null} cars={cars} />;

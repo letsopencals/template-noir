@@ -3,10 +3,11 @@
  * copy for NOIR Drive lives here, so the whole template can be rebranded in one
  * place.
  *
- * What is NOT here: cars, prices, add-ons, availability and checkout questions.
- * Those come from the Opencals store through the API. `fleetContent` only adds
- * editorial detail (specs, tagline, gallery) on top of each car product, keyed
- * by the product slug. Cars without an entry still render from API data.
+ * What is NOT here: cars, prices, photos, add-ons, availability and checkout
+ * questions. Those come from the Opencals store through the API (car photos are
+ * the product's images in the dashboard). `fleetContent` only adds editorial
+ * specs and a tagline on top of each car product, keyed by the product slug.
+ * Cars without an entry still render from API data.
  *
  * FOUNDATION FILE: page agents read from it and raise changes, rather than
  * editing it directly.
@@ -15,17 +16,6 @@
 /* ----------------------------------------------------------------- Types */
 
 export type CarCategory = 'supercars' | 'suvs' | 'grand-tourers';
-
-export interface CarImages {
-	/** Side profile on the studio sweep, 16:9. Also the product image in the store. */
-	side: string;
-	/** Front three-quarter, 16:9. */
-	front: string;
-	/** Cabin, 4:3 or 16:9. */
-	interior: string;
-	/** Wheel / brake / badge detail, square or 4:5. */
-	wheel: string;
-}
 
 export interface CarContent {
 	category: CarCategory;
@@ -45,7 +35,6 @@ export interface CarContent {
 	kmPerDay: number;
 	/** Minimum driver age for this car. */
 	minAge: number;
-	images: CarImages;
 }
 
 export interface DriveRoute {
@@ -66,18 +55,6 @@ export interface DriveRoute {
 	image: string;
 }
 
-/* ---------------------------------------------------------------- Helpers */
-
-/** Expected local image paths for a car slug. See public/images/PLACEHOLDERS.md. */
-export function carImages(slug: string): CarImages {
-	return {
-		side: `/images/fleet/${slug}.jpg`,
-		front: `/images/fleet/${slug}-front.jpg`,
-		interior: `/images/fleet/${slug}-interior.jpg`,
-		wheel: `/images/fleet/${slug}-wheel.jpg`,
-	};
-}
-
 /* ------------------------------------------------------------------ Fleet */
 
 /** Editorial content per car, keyed by the product slug in the store. */
@@ -93,7 +70,6 @@ export const fleetContent: Record<string, CarContent> = {
 		depositAed: 20000,
 		kmPerDay: 200,
 		minAge: 30,
-		images: carImages('lamborghini-revuelto'),
 	},
 	'ferrari-purosangue': {
 		category: 'suvs',
@@ -106,7 +82,6 @@ export const fleetContent: Record<string, CarContent> = {
 		depositAed: 15000,
 		kmPerDay: 250,
 		minAge: 25,
-		images: carImages('ferrari-purosangue'),
 	},
 	'rolls-royce-cullinan': {
 		category: 'suvs',
@@ -119,7 +94,6 @@ export const fleetContent: Record<string, CarContent> = {
 		depositAed: 15000,
 		kmPerDay: 250,
 		minAge: 25,
-		images: carImages('rolls-royce-cullinan'),
 	},
 	'rolls-royce-spectre': {
 		category: 'grand-tourers',
@@ -132,7 +106,6 @@ export const fleetContent: Record<string, CarContent> = {
 		depositAed: 15000,
 		kmPerDay: 250,
 		minAge: 25,
-		images: carImages('rolls-royce-spectre'),
 	},
 	'mclaren-750s': {
 		category: 'supercars',
@@ -145,7 +118,6 @@ export const fleetContent: Record<string, CarContent> = {
 		depositAed: 15000,
 		kmPerDay: 200,
 		minAge: 30,
-		images: carImages('mclaren-750s'),
 	},
 	'lamborghini-urus-se': {
 		category: 'suvs',
@@ -158,7 +130,6 @@ export const fleetContent: Record<string, CarContent> = {
 		depositAed: 12000,
 		kmPerDay: 250,
 		minAge: 25,
-		images: carImages('lamborghini-urus-se'),
 	},
 	'ferrari-12cilindri': {
 		category: 'grand-tourers',
@@ -171,7 +142,6 @@ export const fleetContent: Record<string, CarContent> = {
 		depositAed: 20000,
 		kmPerDay: 200,
 		minAge: 30,
-		images: carImages('ferrari-12cilindri'),
 	},
 	'bentley-continental-gt': {
 		category: 'grand-tourers',
@@ -184,7 +154,6 @@ export const fleetContent: Record<string, CarContent> = {
 		depositAed: 10000,
 		kmPerDay: 250,
 		minAge: 25,
-		images: carImages('bentley-continental-gt'),
 	},
 	'mercedes-amg-g63': {
 		category: 'suvs',
@@ -197,7 +166,6 @@ export const fleetContent: Record<string, CarContent> = {
 		depositAed: 8000,
 		kmPerDay: 250,
 		minAge: 25,
-		images: carImages('mercedes-amg-g63'),
 	},
 	'porsche-911-turbo-s': {
 		category: 'supercars',
@@ -210,7 +178,6 @@ export const fleetContent: Record<string, CarContent> = {
 		depositAed: 10000,
 		kmPerDay: 250,
 		minAge: 25,
-		images: carImages('porsche-911-turbo-s'),
 	},
 	'aston-martin-db12': {
 		category: 'grand-tourers',
@@ -223,7 +190,6 @@ export const fleetContent: Record<string, CarContent> = {
 		depositAed: 10000,
 		kmPerDay: 250,
 		minAge: 25,
-		images: carImages('aston-martin-db12'),
 	},
 	'range-rover-sv': {
 		category: 'suvs',
@@ -236,7 +202,6 @@ export const fleetContent: Record<string, CarContent> = {
 		depositAed: 8000,
 		kmPerDay: 250,
 		minAge: 25,
-		images: carImages('range-rover-sv'),
 	},
 };
 
@@ -354,7 +319,6 @@ export const siteConfig = {
 		body: 'Twelve black cars, delivered to your door anywhere in Dubai. Book by the day, online, in a few minutes.',
 		primaryCta: { label: 'Book a car', href: '/book' },
 		secondaryCta: { label: 'See the fleet', href: '/fleet' },
-		image: '/images/lifestyle/hero.jpg',
 		video: '/videos/hero.mp4',
 	},
 

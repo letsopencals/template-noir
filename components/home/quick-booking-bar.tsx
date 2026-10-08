@@ -70,7 +70,7 @@ const ANY_CAR_ICON = (
 	</span>
 );
 
-function CarThumb({ src, alt }: { src: string; alt: string }) {
+function CarThumb({ src, alt }: { src: string | null; alt: string }) {
 	return (
 		<span className="image-placeholder relative h-9 w-16 shrink-0 overflow-hidden">
 			<SafeImage src={src} alt={alt} fill sizes="64px" className="object-contain" />

@@ -11,5 +11,5 @@ export interface HomeCar {
 	categoryLabel: string | null;
 	tagline: string | null;
 	/** Side-profile image. */
-	image: string;
+	image: string | null;
 }

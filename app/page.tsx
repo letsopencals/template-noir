@@ -1,5 +1,5 @@
 import { siteConfig } from '@/lib/site-config';
-import { getFleet } from '@/lib/server-data';
+import { getFleet, getStoreSettings, storeImages } from '@/lib/server-data';
 import { Hero } from '@/components/home/hero';
 import { FleetSection } from '@/components/home/fleet-section';
 import { Spotlight } from '@/components/home/spotlight';
@@ -14,14 +14,14 @@ import { FinalCta } from '@/components/home/final-cta';
 import { toHomeCar, toSpotlightCar } from '@/components/home/to-home-car';
 
 export default async function HomePage() {
-	const fleet = await getFleet();
+	const [fleet, settings] = await Promise.all([getFleet(), getStoreSettings()]);
 	const cars = fleet.map(toHomeCar);
 	const spotlight = toSpotlightCar(fleet);
 	const spotlightCopy = siteConfig.marketing.spotlight;
 
 	return (
 		<>
-			<Hero cars={cars} lead={cars[0] ?? null} />
+			<Hero cars={cars} lead={cars[0] ?? null} cover={storeImages(settings).banner} />
 			<FleetSection cars={cars} />
 			{spotlight ? <Spotlight car={spotlight} eyebrow={spotlightCopy.eyebrow} ctaLabel={spotlightCopy.cta} /> : null}
 			<HowItWorksBand />

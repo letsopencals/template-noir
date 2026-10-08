@@ -40,7 +40,7 @@ export function FleetCard({ car, size = 'small', from, until, available, index, 
 				)}
 			>
 				<SafeImage
-					src={car.images.side}
+					src={car.image}
 					alt={car.title}
 					fill
 					priority={priority}

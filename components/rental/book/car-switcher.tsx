@@ -143,7 +143,7 @@ export function CarSwitcher({ cars, active, onSelect }: CarSwitcherProps) {
 							transition={reduce ? NO_TRANSITION : IMAGE_TRANSITION}
 						>
 							<SafeImage
-								src={active.images.side}
+								src={active.image}
 								alt={`${active.title}, side profile`}
 								fill
 								priority

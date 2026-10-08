@@ -3,7 +3,7 @@ import Link from 'next/link';
 import type { ProductListItemResponse } from '@opencals/storefront-sdk';
 import { getCollection, getProducts, getStoreSettings } from '@/lib/server-data';
 import { siteConfig } from '@/lib/site-config';
-import { getProductImage } from '@/lib/format';
+import { getListItemGallery } from '@/lib/format';
 import { Reveal } from '@/components/motion/reveal';
 import { ParallaxImage } from '@/components/motion/parallax-image';
 import { buttonClasses } from '@/components/ui/button';
@@ -14,9 +14,6 @@ export const metadata: Metadata = {
 	description: 'Airport transfers, hourly hire, an evening in Dubai or a day in Abu Dhabi, with a NOIR chauffeur in one of our own cars.',
 	alternates: { canonical: '/chauffeur' },
 };
-
-/** Curated local package images (see public/images/PLACEHOLDERS.md). */
-const LOCAL_IMAGES = new Set(['chauffeur-airport-transfer', 'chauffeur-by-the-hour', 'chauffeur-evening-in-dubai', 'chauffeur-day-in-abu-dhabi']);
 
 function plain(text: string | null | undefined): string {
 	return (text ?? '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -34,7 +31,7 @@ function toPackage(p: ProductListItemResponse, currency: string): ChauffeurPacka
 		duration: v.duration ?? p.duration,
 		custom: !!v.allowCustomDuration,
 		maxDuration: v.maxDuration > 0 ? v.maxDuration : 0,
-		image: LOCAL_IMAGES.has(p.slug) ? `/images/chauffeur/${p.slug}.jpg` : getProductImage(p),
+		image: getListItemGallery(p)[0] ?? null,
 	};
 }
 

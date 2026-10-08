@@ -41,15 +41,12 @@ export default async function Page({ params }: Props) {
 	const content = fleetContent[route.bestIn] ?? null;
 	const live = await getCar(route.bestIn);
 	const carTitle = live?.title ?? titleFromSlug(route.bestIn);
-	const carImages = live?.images ?? content?.images ?? null;
-
-	const images: RouteStoryImage[] = carImages
-		? [
-				{ src: carImages.front, alt: `${carTitle} on the road`, layout: 'wide' },
-				{ src: carImages.interior, alt: `${carTitle} cabin`, layout: 'pair' },
-				{ src: carImages.wheel, alt: `${carTitle} wheel detail`, layout: 'pair' },
-			]
-		: [];
+	// Up to three of the car's own product photos (after its default image) illustrate the story.
+	const images: RouteStoryImage[] = (live?.gallery.slice(1, 4) ?? []).map((src, i) => ({
+		src,
+		alt: `${carTitle}, photo ${i + 2}`,
+		layout: i === 0 ? 'wide' : 'pair',
+	}));
 
 	return (
 		<>
@@ -81,13 +78,13 @@ export default async function Page({ params }: Props) {
 				<RouteStory intro={route.intro} body={route.body} images={images} />
 			</section>
 
-			{carImages ? (
+			{live || content ? (
 				<section className={`${CONTAINER} pb-[var(--spacing-section-sm)] lg:pb-[var(--spacing-section)]`}>
 					<BestInCard
 						slug={live?.slug ?? route.bestIn}
 						title={carTitle}
 						tagline={content?.tagline ?? null}
-						image={carImages.side}
+						image={live?.image ?? null}
 						pricePerDay={live && Number.isFinite(live.pricePerDay) ? live.pricePerDay : null}
 						currency={live?.currency ?? siteConfig.currency}
 						routeTitle={route.title}

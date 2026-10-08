@@ -48,7 +48,7 @@ export function CarHero({ car }: { car: CarCardData }) {
 					<motion.div style={reduce ? undefined : { y: carY, scale: carScale }} className="will-change-transform">
 						<DriveIn trigger="mount" delay={0.15} className="aspect-[16/9]">
 							<div className="relative h-full w-full">
-								<SafeImage src={car.images.side} alt={car.title} fill priority sizes="(min-width: 1280px) 1280px, 108vw" className="object-contain" />
+								<SafeImage src={car.image} alt={car.title} fill priority sizes="(min-width: 1280px) 1280px, 108vw" className="object-contain" />
 							</div>
 						</DriveIn>
 					</motion.div>

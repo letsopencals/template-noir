@@ -1,6 +1,5 @@
 import type { ProductListVariant, ProductListVariantLocation } from '@opencals/storefront-sdk';
 import type { FleetCar } from '@/lib/server-data';
-import type { CarImages } from '@/lib/site-config';
 import { siteConfig } from '@/lib/site-config';
 import { rentalDays, todayIn } from '@/lib/rental';
 
@@ -18,7 +17,10 @@ export interface BookCar {
 	depositAed: number | null;
 	kmPerDay: number | null;
 	minAge: number | null;
-	images: CarImages;
+	/** Default product image, or null (renders the dark placeholder). */
+	image: string | null;
+	/** Every product image, default first (from the store, not the template). */
+	gallery: string[];
 	/** The bookable variant (add-ons and locations hang off it). */
 	variant: ProductListVariant | null;
 	garage: ProductListVariantLocation | null;
@@ -48,7 +50,8 @@ export function toBookCar(car: FleetCar): BookCar {
 		depositAed: car.content?.depositAed ?? null,
 		kmPerDay: car.content?.kmPerDay ?? null,
 		minAge: car.content?.minAge ?? null,
-		images: car.images,
+		image: car.image,
+		gallery: car.gallery,
 		variant: variant ? { ...variant, staffMembers: [] } : null,
 		garage: locations.find((l) => l.type === siteConfig.locationTypes.garage) ?? null,
 		delivery: locations.find((l) => l.type === siteConfig.locationTypes.delivery) ?? null,

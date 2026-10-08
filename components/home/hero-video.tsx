@@ -8,7 +8,7 @@ export interface HeroVideoProps {
 	/** Looping background clip (e.g. /videos/hero.mp4). */
 	src: string;
 	/** Still frame shown under the video, and alone if the video is missing. */
-	poster: string;
+	poster: string | null;
 }
 
 /**

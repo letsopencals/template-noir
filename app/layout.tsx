@@ -6,7 +6,7 @@ import { Providers } from '@/components/providers';
 import { SmoothScroll } from '@/components/motion/smooth-scroll';
 import { ScrollProgress } from '@/components/motion/scroll-progress';
 import { siteConfig } from '@/lib/site-config';
-import { getStoreSettings } from '@/lib/server-data';
+import { getStoreSettings, storeImages } from '@/lib/server-data';
 import './globals.css';
 
 // Archivo is variable on weight AND width; `axes: ['wdth']` ships the width
@@ -66,6 +66,7 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
 	const initialSettings = await getStoreSettings();
+	const { logo, banner } = storeImages(initialSettings);
 	const [street, locality] = siteConfig.contact.address.split('\n');
 
 	return (
@@ -94,6 +95,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 							name: siteConfig.name,
 							description: siteConfig.description,
 							url: siteConfig.url,
+							...(logo ? { logo } : {}),
+							...(banner ? { image: banner } : {}),
 							telephone: siteConfig.contact.phone,
 							email: siteConfig.contact.email,
 							currenciesAccepted: siteConfig.currency,

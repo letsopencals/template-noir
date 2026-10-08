@@ -12,7 +12,7 @@ export function CarJsonLd({ car }: { car: CarCardData }) {
 		'@type': 'Product',
 		name: car.title,
 		description: car.content?.tagline ?? (car.description.replace(/<[^>]+>/g, ' ').trim() || siteConfig.description),
-		image: [car.images.side, car.images.front, car.images.interior].map(absolute),
+		image: car.gallery.map(absolute),
 		url: `${siteConfig.url}/fleet/${car.slug}`,
 		category: car.categoryLabel ?? 'Car rental',
 		brand: { '@type': 'Brand', name: makeName(car.title) },
