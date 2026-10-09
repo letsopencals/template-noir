@@ -4,7 +4,7 @@ A production-ready rental website for a premium car-hire business. Built with **
 
 **[View Live Demo →](https://template-noir.vercel.app)**
 
-![NOIR Drive — fleet, car page and the multi-day booking flow, on desktop and mobile](docs/cover.png)
+![NOIR Drive — the storefront on a laptop, held up in front of a black fleet on Palm Jumeirah at dusk](docs/cover.png)
 
 Black, cinematic and heavily animated: near-black surfaces, one champagne accent, an expanded automotive display face and monospaced specs. Set in **Dubai** (AED, `Asia/Dubai`) with an all-black fleet of twelve supercars, SUVs and grand tourers booked **by the day**, delivered to the customer's door, plus **chauffeur packages** with real drivers. Full storefront included — fleet, car pages, rates, multi-day booking, chauffeur flow, checkout, customer accounts — wired up out of the box. MIT licensed: clone it, rebrand it, ship it.
 
