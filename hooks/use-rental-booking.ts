@@ -333,10 +333,6 @@ export function useRentalBooking(input: RentalBookingInput) {
 					await signIn('checkout-token', {
 						accessToken: data.auth.accessToken,
 						refreshToken: data.auth.refreshToken,
-						customerId: data.customer?.id ?? '',
-						customerEmail: data.customer?.email ?? email,
-						customerFirstName: data.customer?.firstName ?? firstName,
-						customerLastName: data.customer?.lastName ?? lastName,
 						redirect: false,
 					});
 				}
@@ -347,7 +343,7 @@ export function useRentalBooking(input: RentalBookingInput) {
 				setSubmitting(false);
 			}
 		},
-		[cartHeaders, checkoutCustomer, email, firstName, lastName, clearCart, router],
+		[cartHeaders, checkoutCustomer, clearCart, router],
 	);
 
 	const selectProvider = useCallback(

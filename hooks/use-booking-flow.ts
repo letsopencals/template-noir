@@ -452,10 +452,6 @@ export function useBookingFlow(slug: string, initialProduct: ProductListItemResp
 					await signIn('checkout-token', {
 						accessToken: data.auth.accessToken,
 						refreshToken: data.auth.refreshToken,
-						customerId: data.customer?.id ?? '',
-						customerEmail: data.customer?.email ?? email,
-						customerFirstName: data.customer?.firstName ?? firstName,
-						customerLastName: data.customer?.lastName ?? lastName,
 						redirect: false,
 					});
 				}
@@ -466,7 +462,7 @@ export function useBookingFlow(slug: string, initialProduct: ProductListItemResp
 				setSubmitting(false);
 			}
 		},
-		[cartHeaders, checkoutCustomer, email, firstName, lastName, clearCart, router],
+		[cartHeaders, checkoutCustomer, clearCart, router],
 	);
 
 	// Cash and "nothing to pay" show a confirm panel (PaymentStep); no auto-submit.
