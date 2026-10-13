@@ -7,12 +7,16 @@ import { addDays, todayIn } from '@/lib/rental';
 import { Button } from '@/components/ui/button';
 import { Notice } from '@/components/auth/auth-feedback';
 import { Modal, chipClass, readError } from './modal';
+import { onSessionExpired } from '@/lib/session-expired';
 
 const DAYS_AHEAD = 30;
 
 /**
  * Classic slot reschedule for clock-time bookings (chauffeur packages and
  * anything else that isn't a day rental). Same driver, same location.
+ * `excludeAppointmentId` keeps the booking's own slot from blocking itself, and
+ * custom-duration products ask for the booked length (fixed-length products
+ * reject `duration`, so it's only sent when the product allows it).
  */
 export function SlotRescheduleModal({
 	appointment,
@@ -27,11 +31,15 @@ export function SlotRescheduleModal({
 	const [slots, setSlots] = useState<CurrentAvailabilitySlot[]>([]);
 	const [selectedSlot, setSelectedSlot] = useState<CurrentAvailabilitySlot | null>(null);
 	const [loadingSlots, setLoadingSlots] = useState(false);
+	const [slotsError, setSlotsError] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState('');
 
 	const { formatCustom, formatSlot, formatTime, timezone } = useDateFormatter();
 	const productId = appointment.productId;
+	const bookedSeconds = appointment.product?.allowCustomDuration
+		? Math.round((new Date(appointment.to).getTime() - new Date(appointment.from).getTime()) / 1000)
+		: 0;
 
 	const dates = useMemo(() => {
 		const today = todayIn(timezone);
@@ -41,10 +49,12 @@ export function SlotRescheduleModal({
 	const fetchSlots = useCallback(
 		async (date: string) => {
 			setLoadingSlots(true);
+			setSlotsError(false);
 			setSlots([]);
 			setSelectedSlot(null);
 			try {
-				const params = new URLSearchParams({ productId, date, timezone });
+				const params = new URLSearchParams({ productId, date, timezone, excludeAppointmentId: appointment.id });
+				if (bookedSeconds > 0) params.set('duration', String(bookedSeconds));
 				if (appointment.staffMemberId) params.set('staffMemberId', appointment.staffMemberId);
 				if (appointment.locationId) params.set('locationId', appointment.locationId);
 
@@ -53,14 +63,16 @@ export function SlotRescheduleModal({
 					const data = await res.json();
 					const availableSlots: CurrentAvailabilitySlot[] = Array.isArray(data) ? data : (data?.slots ?? []);
 					setSlots(availableSlots);
+				} else {
+					setSlotsError(true);
 				}
 			} catch {
-				// silently fail
+				setSlotsError(true);
 			} finally {
 				setLoadingSlots(false);
 			}
 		},
-		[productId, timezone, appointment.staffMemberId, appointment.locationId],
+		[productId, timezone, appointment.id, bookedSeconds, appointment.staffMemberId, appointment.locationId],
 	);
 
 	useEffect(() => {
@@ -87,6 +99,7 @@ export function SlotRescheduleModal({
 					},
 				}),
 			});
+			if (res.status === 401) return onSessionExpired();
 			if (res.ok) {
 				onRescheduled();
 			} else {
@@ -133,6 +146,8 @@ export function SlotRescheduleModal({
 								<div key={i} className="h-10 animate-pulse bg-[var(--color-surface)]" />
 							))}
 						</div>
+					) : slotsError ? (
+						<Notice tone="error">We couldn&apos;t load times for this date. Please try again.</Notice>
 					) : slots.length === 0 ? (
 						<p className="text-sm text-[var(--color-ink-muted)]">No available times on this date.</p>
 					) : (

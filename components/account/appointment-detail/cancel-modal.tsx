@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Notice } from '@/components/auth/auth-feedback';
 import { DESTRUCTIVE_BUTTON, Modal, readError } from './modal';
+import { onSessionExpired } from '@/lib/session-expired';
 
 export function CancelModal({
 	appointmentId,
@@ -26,6 +27,7 @@ export function CancelModal({
 		setError('');
 		try {
 			const res = await fetch(`/api/account/appointments/${appointmentId}/cancel`, { method: 'PUT' });
+			if (res.status === 401) return onSessionExpired();
 			if (res.ok) {
 				onCanceled();
 			} else {

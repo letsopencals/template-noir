@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { useFormSubmit } from '@/hooks/use-form-submit';
 import { Panel, SkeletonBlock } from '@/components/account/account-ui';
 import { FIELD_LABEL, FORM_LABEL, Notice } from '@/components/auth/auth-feedback';
+import { onSessionExpired } from '@/lib/session-expired';
 
 export function ProfileForm() {
 	const [loading, setLoading] = useState(true);
@@ -26,6 +27,7 @@ export function ProfileForm() {
 		async function fetchProfile() {
 			try {
 				const res = await fetch('/api/account/profile');
+				if (res.status === 401) return onSessionExpired();
 				if (res.ok) {
 					const data = await res.json();
 					form.reset({ firstName: data.firstName ?? '', lastName: data.lastName ?? '' });

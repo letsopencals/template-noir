@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Notice } from '@/components/auth/auth-feedback';
 import { dayLabel, formatLocalDate } from '@/components/account/booking-meta';
 import { Modal, chipClass, readError } from './modal';
+import { onSessionExpired } from '@/lib/session-expired';
 
 const DAYS_AHEAD = 60;
 const TZ = siteConfig.timezone;
@@ -79,6 +80,7 @@ export function RentalRescheduleModal({
 					},
 				}),
 			});
+			if (res.status === 401) return onSessionExpired();
 			if (res.ok) {
 				onRescheduled();
 			} else {

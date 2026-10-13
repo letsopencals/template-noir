@@ -6,6 +6,7 @@ import type { AppointmentListItemResponse, CollectionMeta } from '@opencals/stor
 import { buttonClasses } from '@/components/ui/button';
 import { AccountHeading, EmptyState, Pagination, SkeletonBlock } from '@/components/account/account-ui';
 import { AppointmentRow } from '@/components/account/appointment-row';
+import { onSessionExpired } from '@/lib/session-expired';
 
 export default function AppointmentsPage() {
 	const [appointments, setAppointments] = useState<AppointmentListItemResponse[]>([]);
@@ -17,6 +18,7 @@ export default function AppointmentsPage() {
 		setLoading(true);
 		try {
 			const res = await fetch(`/api/account/appointments?take=10&page=${p}`);
+			if (res.status === 401) return onSessionExpired();
 			if (res.ok) {
 				const data: { data: AppointmentListItemResponse[]; meta: CollectionMeta } = await res.json();
 				setAppointments(data.data ?? []);

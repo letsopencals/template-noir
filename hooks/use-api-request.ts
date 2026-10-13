@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { onSessionExpired } from '@/lib/session-expired';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
@@ -69,6 +70,7 @@ export function useApiRequest<TData>(
 				});
 
 				if (!res.ok) {
+					if (res.status === 401 && url.startsWith('/api/account')) onSessionExpired();
 					const apiError: ApiErrorResponse | null = await res.json().catch(() => null);
 					const errorMessage = apiError?.error || `Request failed (${res.status})`;
 					setError(errorMessage);

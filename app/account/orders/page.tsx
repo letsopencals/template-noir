@@ -8,6 +8,7 @@ import { useDateFormatter } from '@/hooks/use-date-formatter';
 import { buttonClasses } from '@/components/ui/button';
 import { AccountHeading, EmptyState, Pagination, SkeletonBlock } from '@/components/account/account-ui';
 import { StatusBadge } from '@/components/account/status-badge';
+import { onSessionExpired } from '@/lib/session-expired';
 
 // The SDK OrderListItemResponse type is missing `id` but it's returned by the API
 type OrderWithId = OrderListItemResponse & { id: string };
@@ -24,6 +25,7 @@ export default function OrdersPage() {
 		setLoading(true);
 		try {
 			const res = await fetch(`/api/account/orders?take=10&page=${p}`);
+			if (res.status === 401) return onSessionExpired();
 			if (res.ok) {
 				const data: { data: OrderWithId[]; meta: CollectionMeta } = await res.json();
 				setOrders(data.data ?? []);

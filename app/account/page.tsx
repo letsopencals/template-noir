@@ -10,6 +10,7 @@ import { buttonClasses } from '@/components/ui/button';
 import { AccountHeading, EmptyState, Panel, PanelLink, SkeletonBlock } from '@/components/account/account-ui';
 import { AppointmentRow } from '@/components/account/appointment-row';
 import { StatusBadge } from '@/components/account/status-badge';
+import { onSessionExpired } from '@/lib/session-expired';
 
 type OrderWithId = OrderListItemResponse & { id: string };
 
@@ -27,6 +28,7 @@ export default function AccountDashboard() {
 					fetch('/api/account/appointments?take=5'),
 					fetch('/api/account/orders?take=5'),
 				]);
+				if (apptRes.status === 401 || ordersRes.status === 401) return onSessionExpired();
 
 				if (apptRes.ok) {
 					const data: { data: AppointmentListItemResponse[]; meta: CollectionMeta } = await apptRes.json();
