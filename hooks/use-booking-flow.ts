@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn, useSession } from 'next-auth/react';
 import type {
-	AppointmentAddress,
+	Address,
 	CheckoutStartResponse,
 	CurrentAvailabilitySlot,
 	ProductListItemResponse,
@@ -145,7 +145,7 @@ export function useBookingFlow(slug: string, initialProduct: ProductListItemResp
 	);
 	const needsPickupAddress = selectedLocation?.type === siteConfig.locationTypes.delivery;
 
-	const address = useMemo<AppointmentAddress | null>(
+	const address = useMemo<Address | null>(
 		() =>
 			needsPickupAddress && pickupAddress.trim()
 				? { addressLine1: pickupAddress.trim(), city: 'Dubai', country: siteConfig.country }

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn, useSession } from 'next-auth/react';
 import type {
-	AppointmentAddress,
+	Address,
 	CartResponse,
 	CheckoutStartResponse,
 	ProductListVariant,
@@ -29,7 +29,7 @@ export interface RentalBookingInput {
 	/** handover_time, return_time, collect_address, flight_number. Empty values are dropped. */
 	customAttributes: Record<string, string>;
 	/** Delivery address (only for a delivery location). */
-	address: AppointmentAddress | null;
+	address: Address | null;
 	/** Called when the server says the dates were taken in the meantime. */
 	onSlotUnavailable?: () => void;
 }

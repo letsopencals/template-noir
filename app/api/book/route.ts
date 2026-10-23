@@ -1,6 +1,6 @@
 import '@/lib/opencals';
 import { AppointmentService, CartService, CheckoutService, OpencalsApiError } from '@opencals/storefront-sdk';
-import type { AppointmentAddress, CartResponse } from '@opencals/storefront-sdk';
+import type { Address, CartResponse } from '@opencals/storefront-sdk';
 import { getAccessToken } from '@/lib/api-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/lib/api-error-handler';
@@ -44,7 +44,7 @@ interface BookInput {
 	/** String key/values stored on the appointment (handover_time, return_time, …). */
 	customAttributes?: Record<string, string>;
 	/** Delivery address. The backend stores it only when the location is a `delivery` location. */
-	address?: AppointmentAddress;
+	address?: Address;
 	/**
 	 * Cart item from an earlier attempt in the same flow (the guest changed dates
 	 * or extras after reserving). Removed first so its pending hold doesn't block
@@ -64,10 +64,10 @@ function sanitizeAttributes(input: Record<string, unknown>): Record<string, stri
 
 const ADDRESS_KEYS = ['addressLine1', 'addressLine2', 'city', 'state', 'postalCode', 'country'] as const;
 
-function sanitizeAddress(input: unknown): AppointmentAddress | null {
+function sanitizeAddress(input: unknown): Address | null {
 	if (!input || typeof input !== 'object') return null;
 	const src = input as Record<string, unknown>;
-	const out: AppointmentAddress = {};
+	const out: Address = {};
 	for (const key of ADDRESS_KEYS) {
 		const v = src[key];
 		if (typeof v === 'string' && v.trim()) out[key] = v.trim().slice(0, 255);

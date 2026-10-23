@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { AppointmentAddress } from '@opencals/storefront-sdk';
+import type { Address } from '@opencals/storefront-sdk';
 import { siteConfig } from '@/lib/site-config';
 import { addDays, rentalDays } from '@/lib/rental';
 
@@ -73,7 +73,7 @@ export function useRentalHandover(init: RentalHandoverInit) {
 	const timesValid = handoverTime !== null && returnTime !== null;
 
 	/** Delivery address for the appointment (null when collecting at the garage). */
-	const appointmentAddress = useMemo<AppointmentAddress | null>(() => {
+	const appointmentAddress = useMemo<Address | null>(() => {
 		if (mode !== 'delivery' || !address.line1.trim()) return null;
 		return {
 			addressLine1: address.line1.trim(),
