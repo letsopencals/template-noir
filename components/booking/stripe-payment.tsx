@@ -5,8 +5,6 @@ import { type Appearance, type StripeError, loadStripe } from '@stripe/stripe-js
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { Button } from '@/components/ui/button';
 
-const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '';
-
 /** Stripe Elements in NOIR colours: black field, ivory text, champagne focus, squared 2px. */
 const APPEARANCE: Appearance = {
 	theme: 'night',
@@ -33,18 +31,20 @@ const APPEARANCE: Appearance = {
 interface StripePaymentProps {
 	clientSecret: string;
 	stripeAccountId?: string | null;
+	/** Key returned by checkout start (matches the account's test/live mode). */
+	publishableKey?: string | null;
 	onSuccess: (paymentIntentId: string) => void;
 	onError: (message: string) => void;
 	disabled?: boolean;
 }
 
-export function StripePayment({ clientSecret, stripeAccountId, onSuccess, onError, disabled }: StripePaymentProps) {
+export function StripePayment({ clientSecret, stripeAccountId, publishableKey, onSuccess, onError, disabled }: StripePaymentProps) {
 	const stripePromise = useMemo(() => {
 		if (!publishableKey) return null;
 		return loadStripe(publishableKey, {
 			stripeAccount: stripeAccountId ?? undefined,
 		});
-	}, [stripeAccountId]);
+	}, [publishableKey, stripeAccountId]);
 
 	const options = useMemo(() => ({ clientSecret, appearance: APPEARANCE }), [clientSecret]);
 
@@ -52,8 +52,7 @@ export function StripePayment({ clientSecret, stripeAccountId, onSuccess, onErro
 		return (
 			<div className="border border-[#E5787A]/40 bg-[#E5787A]/10 p-6">
 				<p className="text-sm text-[#E5787A]">
-					Stripe is not configured. Set{' '}
-					<code className="tabular bg-black/40 px-1 py-0.5 text-xs">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> in your environment.
+					Card payments aren&rsquo;t set up for this store yet. Connect Stripe in the Opencals dashboard.
 				</p>
 			</div>
 		);

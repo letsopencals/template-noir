@@ -30,7 +30,6 @@ During deployment, Vercel will ask you to set environment variables:
 |----------|-------|
 | `OPENCALS_API_KEY` | Your private storefront key (starts with `spk_`) |
 | `AUTH_SECRET` | Any random string — used for session encryption |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | *(optional)* Stripe publishable key for payments |
 
 Then set `url` in `lib/site-config.ts` to your domain (it drives the sitemap, canonical URLs and Open Graph). That's it.
 
@@ -224,7 +223,6 @@ lib/                           # site-config, rental (fit + slot maths), server-
 |----------|----------|-------------|
 | `OPENCALS_API_KEY` | Yes | Private storefront key (`spk_`) from your Opencals dashboard |
 | `AUTH_SECRET` | Yes | Random string for NextAuth session encryption |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | No | Stripe publishable key for payment processing |
 | `OPENCALS_API_URL` | No | Override API base URL (defaults to production) |
 
 The public site URL is `url` in `lib/site-config.ts`.

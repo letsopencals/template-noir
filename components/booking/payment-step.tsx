@@ -114,6 +114,7 @@ export function PaymentStep({
 				<StripePayment
 					clientSecret={clientSecret}
 					stripeAccountId={paymentData?.stripeAccountId}
+					publishableKey={paymentData?.publishableKey}
 					onSuccess={onStripeSuccess}
 					onError={onStripeError}
 					disabled={isExpired}
