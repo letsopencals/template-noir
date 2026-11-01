@@ -1,5 +1,5 @@
 import '@/lib/opencals';
-import { CheckoutService, type StartCheckout } from '@opencals/storefront-sdk';
+import { CheckoutService, type PaymentProviderName } from '@opencals/storefront-sdk';
 import { getAccessToken } from '@/lib/api-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/lib/api-error-handler';
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 		if (typeof raw.provider !== 'string' || !PROVIDER_NAME.test(raw.provider)) {
 			return NextResponse.json({ error: 'Choose a payment method' }, { status: 400 });
 		}
-		const provider = raw.provider as StartCheckout['provider'];
+		const provider = raw.provider as PaymentProviderName;
 		const customer = toCheckoutCustomer(raw.customer, raw.deliveryAddress);
 		const token = await getAccessToken();
 		const { data } = await CheckoutService.start({

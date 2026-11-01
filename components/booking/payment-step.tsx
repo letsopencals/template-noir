@@ -1,18 +1,18 @@
 'use client';
 
 import { clsx } from 'clsx';
-import type { CheckoutStartResponse, CustomerProviderCatalogItem } from '@opencals/storefront-sdk';
+import type { CheckoutStartResponse, CustomerProviderCatalogItem, PaymentProviderName } from '@opencals/storefront-sdk';
 import { StripePayment } from '@/components/booking/stripe-payment';
 import { Button } from '@/components/ui/button';
-import { checkoutModeOf, providerLabel, type ProviderName } from '@/lib/checkout-payment';
+import { checkoutModeOf, providerLabel } from '@/lib/checkout-payment';
 
 interface PaymentStepProps {
 	providers: CustomerProviderCatalogItem[];
-	provider: ProviderName | null;
+	provider: PaymentProviderName | null;
 	paymentData: CheckoutStartResponse | null;
 	submitting: boolean;
 	isExpired: boolean;
-	onSelectProvider: (providerName: ProviderName) => void;
+	onSelectProvider: (providerName: PaymentProviderName) => void;
 	onStripeSuccess: (paymentIntentId: string) => void;
 	onStripeError: (message: string) => void;
 	/** Manual methods (cash, bank transfer, invoice) and "nothing to pay": start + submit. */

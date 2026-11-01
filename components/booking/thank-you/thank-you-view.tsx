@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { useReducedMotion } from '@/components/motion/use-reduced-motion';
-import type { OrderDetailAppointment, OrderDetailResponse, PaymentInstructions } from '@opencals/storefront-sdk';
+import type { OrderDetailAppointment, OrderDetailResponse, PaymentInstructions, PaymentProviderName } from '@opencals/storefront-sdk';
 import { fetcher } from '@/lib/fetcher';
 import { formatPrice } from '@/lib/format';
 import { siteConfig } from '@/lib/site-config';
@@ -46,7 +46,7 @@ function Row({ label, value, accent = false }: { label: string; value: string; a
 }
 
 /** Payment status for the summary. Never a raw value or a blank. */
-function paymentLabel(order: OrderDetailResponse, provider: PaymentInstructions['provider'] | null): string {
+function paymentLabel(order: OrderDetailResponse, provider: PaymentProviderName | null): string {
 	if (order.isFullyPaid || order.paymentStatus === 'paid') return 'Paid';
 	if (order.paymentStatus === 'partially-paid') return 'Part paid';
 	if (order.paymentStatus === 'voided') return 'Cancelled — not charged';

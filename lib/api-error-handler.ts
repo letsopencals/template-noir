@@ -1,10 +1,9 @@
-import { OpencalsApiError } from '@opencals/storefront-sdk';
+import { OpencalsApiError, type CheckoutErrorResponse } from '@opencals/storefront-sdk';
 import { NextResponse } from 'next/server';
 
-/** A string field from the API's parsed error body (`OpencalsApiError.body`). */
-function errorField(err: OpencalsApiError, key: 'orderId' | 'paymentStatus'): string | undefined {
-	const value = err.body?.[key];
-	return typeof value === 'string' ? value : undefined;
+/** A non-empty string, or undefined. */
+function text(value: unknown): string | undefined {
+	return typeof value === 'string' && value ? value : undefined;
 }
 
 /**
@@ -15,12 +14,15 @@ function errorField(err: OpencalsApiError, key: 'orderId' | 'paymentStatus'): st
 export function handleApiError(err: unknown, fallbackMessage = 'Internal server error') {
 	if (err instanceof OpencalsApiError) {
 		const fieldErrors = err.toFieldErrors();
-		const orderId = errorField(err, 'orderId');
-		const paymentStatus = errorField(err, 'paymentStatus');
+		// The checkout error fields of the parsed body. Other errors (a plain validation 400) carry none of them.
+		const body: Partial<CheckoutErrorResponse> = err.body ?? {};
+		const orderId = text(body.orderId);
+		const paymentStatus = text(body.paymentStatus);
 		return NextResponse.json(
 			{
 				error: err.message,
 				...(Object.keys(fieldErrors).length > 0 && { errors: fieldErrors }),
+				// Any route's code is passed on (checkout codes, discount codes, …), so this stays a string.
 				...(err.code ? { code: err.code } : {}),
 				...(orderId ? { orderId } : {}),
 				...(paymentStatus ? { paymentStatus } : {}),

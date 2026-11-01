@@ -5,14 +5,16 @@ import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import type {
 	Address,
+	CheckoutErrorResponse,
 	CheckoutResponse,
 	CheckoutStartResponse,
 	CustomerProviderCatalogItem,
 	ExistingOrderCustomer,
 	NewOrderCustomer,
+	PaymentProviderName,
 } from '@opencals/storefront-sdk';
 import { useCart } from '@/contexts/cart-context';
-import { checkoutModeOf, readCheckoutError, rememberPaymentInstructions, type CheckoutError, type ProviderName } from '@/lib/checkout-payment';
+import { checkoutModeOf, readCheckoutError, rememberPaymentInstructions, type CheckoutError } from '@/lib/checkout-payment';
 
 interface CheckoutPaymentInput {
 	providers: CustomerProviderCatalogItem[];
@@ -43,7 +45,7 @@ async function post(url: string, headers: Record<string, string>, body: object):
 		const peek = (await res
 			.clone()
 			.json()
-			.catch(() => null)) as { code?: string } | null;
+			.catch(() => null)) as Partial<CheckoutErrorResponse> | null;
 		if (peek?.code !== 'CHECKOUT_IN_PROGRESS') return res;
 		await sleep(1500 * (attempt + 1));
 	}
@@ -62,7 +64,7 @@ async function post(url: string, headers: Record<string, string>, body: object):
 export function useCheckoutPayment({ providers, cartHeaders, checkoutCustomer, enabled, setError, onHoldLost }: CheckoutPaymentInput) {
 	const router = useRouter();
 	const { clearCart } = useCart();
-	const [provider, setProvider] = useState<ProviderName | null>(null);
+	const [provider, setProvider] = useState<PaymentProviderName | null>(null);
 	const [paymentData, setPaymentData] = useState<CheckoutStartResponse | null>(null);
 	const [submitting, setSubmitting] = useState(false);
 
@@ -110,7 +112,7 @@ export function useCheckoutPayment({ providers, cartHeaders, checkoutCustomer, e
 	);
 
 	const start = useCallback(
-		async (providerName: ProviderName): Promise<CheckoutStartResponse> => {
+		async (providerName: PaymentProviderName): Promise<CheckoutStartResponse> => {
 			const res = await post('/api/checkout/start', cartHeaders(), { provider: providerName, ...checkoutCustomer });
 			if (!res.ok) throw new CheckoutFailure(await readCheckoutError(res, 'Could not start checkout'));
 			const data = (await res.json().catch(() => null)) as CheckoutStartResponse | null;
@@ -162,7 +164,7 @@ export function useCheckoutPayment({ providers, cartHeaders, checkoutCustomer, e
 	);
 
 	const selectProvider = useCallback(
-		async (providerName: ProviderName) => {
+		async (providerName: PaymentProviderName) => {
 			if (!enabled) return;
 			const mode = checkoutModeOf(providers.find((p) => p.name === providerName) ?? { name: providerName });
 			setProvider(providerName);

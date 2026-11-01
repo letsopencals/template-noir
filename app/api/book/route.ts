@@ -6,18 +6,25 @@ import type {
 	CartResponse,
 	CheckoutQuestionAnswer,
 	CreateAppointmentAddOn,
-	ExistingOrderCustomer,
+	ExistingAppointmentCustomer,
+	NewAppointmentCustomer,
 	NewOrderCustomer,
 } from '@opencals/storefront-sdk';
 import { getAccessToken } from '@/lib/api-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/lib/api-error-handler';
 
+/**
+ * The appointment customer. The client sends its checkout customer here; only these fields are read. `phone` isn't
+ * on the SDK's NewAppointmentCustomer, but the API stores it on a new customer, so it's still passed through.
+ */
+type BookCustomer = ExistingAppointmentCustomer | (NewAppointmentCustomer & Pick<NewOrderCustomer, 'phone'>);
+
 interface BookInput {
 	slot: AppointmentDateRangeSlot;
 	numberOfAttendees?: number;
 	addOns?: CreateAppointmentAddOn[];
-	customer?: ExistingOrderCustomer | NewOrderCustomer;
+	customer?: BookCustomer;
 	checkoutQuestionAnswers?: CheckoutQuestionAnswer[];
 	/** String key/values stored on the appointment (handover_time, return_time, …). */
 	customAttributes?: Record<string, string>;
@@ -68,10 +75,10 @@ function sanitizeAnswers(input: unknown): CheckoutQuestionAnswer[] {
 		}));
 }
 
-/** The order customer from the client, as the appointment's customer (an existing id, or a new guest by email). */
-function toAppointmentCustomer(customer: ExistingOrderCustomer | NewOrderCustomer) {
-	if (customer.kind === 'existing' && customer.customerId) return { customerId: customer.customerId };
-	const email = ('email' in customer ? customer.email : undefined) ?? '';
+/** The appointment's customer: an existing id, or a new guest by email. */
+function toAppointmentCustomer(customer: BookCustomer): BookCustomer {
+	if ('customerId' in customer) return { customerId: customer.customerId };
+	const email = customer.email ?? '';
 	return {
 		externalId: email,
 		email,
