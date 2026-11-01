@@ -23,6 +23,10 @@ interface WhenWhereProps {
 	slotTaken: boolean;
 	canContinue: boolean;
 	onContinue: () => void;
+	/** API field errors for the delivery address (`address.line1`, `address.city`, …). */
+	fieldErrors?: Record<string, string[]>;
+	/** Clears a field's error when the guest edits it. */
+	onFieldEdit?: (field: string) => void;
 }
 
 const FIELD_LABEL = 'mb-2 block text-[0.68rem] uppercase tracking-[0.22em] text-[var(--color-ink-muted)]';
@@ -34,7 +38,18 @@ const NO_TRANSITION = { duration: 0 };
 const TIME_OPTIONS = siteConfig.handoverTimes.map((t) => ({ value: t, label: t }));
 
 /** Step 01: dates, handover / return windows, and deliver-vs-collect. */
-export function WhenWhere({ car, handover: h, ranges, rangesLoading, datesFit, slotTaken, canContinue, onContinue }: WhenWhereProps) {
+export function WhenWhere({
+	car,
+	handover: h,
+	ranges,
+	rangesLoading,
+	datesFit,
+	slotTaken,
+	canContinue,
+	onContinue,
+	fieldErrors = {},
+	onFieldEdit,
+}: WhenWhereProps) {
 	const modeOptions = useMemo(
 		() => [
 			{
@@ -89,7 +104,7 @@ export function WhenWhere({ car, handover: h, ranges, rangesLoading, datesFit, s
 				<p className={SUB_HEAD}>Handover</p>
 				<ChoiceChips layoutId="book-mode" label="Handover" options={modeOptions} value={h.mode} onChange={h.setMode} columns={2} />
 				<Unfold show={h.mode === 'delivery'}>
-					<DeliveryFields handover={h} />
+					<DeliveryFields handover={h} fieldErrors={fieldErrors} onFieldEdit={onFieldEdit} />
 				</Unfold>
 				<Unfold show={h.mode === 'garage'}>
 					<div className="mt-6 border border-[var(--color-line)] bg-[var(--color-surface)] px-5 py-5 text-sm">
@@ -149,22 +164,34 @@ export function WhenWhere({ car, handover: h, ranges, rangesLoading, datesFit, s
 	);
 }
 
-function DeliveryFields({ handover: h }: { handover: RentalHandover }) {
+function DeliveryFields({
+	handover: h,
+	fieldErrors,
+	onFieldEdit,
+}: {
+	handover: RentalHandover;
+	fieldErrors: Record<string, string[]>;
+	onFieldEdit?: (field: string) => void;
+}) {
+	const edit = (field: 'line1' | 'line2' | 'area' | 'city', value: string) => {
+		h.updateAddress({ [field]: value });
+		onFieldEdit?.(`address.${field}`);
+	};
 	return (
 		<div className="mt-6 grid gap-5 sm:grid-cols-2">
-			<LabeledField label="Hotel, villa or building" className="sm:col-span-2">
-				{(id) => (
-					<Input id={id} value={h.address.line1} onChange={(e) => h.updateAddress({ line1: e.target.value })} autoComplete="address-line1" placeholder="e.g. Atlantis The Royal" />
+			<LabeledField label="Hotel, villa or building" className="sm:col-span-2" error={fieldErrors['address.line1']}>
+				{(id, a11y) => (
+					<Input id={id} {...a11y} value={h.address.line1} onChange={(e) => edit('line1', e.target.value)} autoComplete="address-line1" placeholder="e.g. Atlantis The Royal" />
 				)}
 			</LabeledField>
-			<LabeledField label="Room, apartment or villa no. (optional)">
-				{(id) => <Input id={id} value={h.address.line2} onChange={(e) => h.updateAddress({ line2: e.target.value })} autoComplete="address-line2" />}
+			<LabeledField label="Room, apartment or villa no. (optional)" error={fieldErrors['address.line2']}>
+				{(id, a11y) => <Input id={id} {...a11y} value={h.address.line2} onChange={(e) => edit('line2', e.target.value)} autoComplete="address-line2" />}
 			</LabeledField>
-			<LabeledField label="Area (optional)">
-				{(id) => <Input id={id} value={h.address.area} onChange={(e) => h.updateAddress({ area: e.target.value })} placeholder="e.g. Palm Jumeirah" />}
+			<LabeledField label="Area (optional)" error={fieldErrors['address.area']}>
+				{(id, a11y) => <Input id={id} {...a11y} value={h.address.area} onChange={(e) => edit('area', e.target.value)} placeholder="e.g. Palm Jumeirah" />}
 			</LabeledField>
-			<LabeledField label="City">
-				{(id) => <Input id={id} value={h.address.city} onChange={(e) => h.updateAddress({ city: e.target.value })} autoComplete="address-level2" />}
+			<LabeledField label="City" error={fieldErrors['address.city']}>
+				{(id, a11y) => <Input id={id} {...a11y} value={h.address.city} onChange={(e) => edit('city', e.target.value)} autoComplete="address-level2" />}
 			</LabeledField>
 			<LabeledField label="Flight number (airport only)">
 				{(id) => (
@@ -175,14 +202,32 @@ function DeliveryFields({ handover: h }: { handover: RentalHandover }) {
 	);
 }
 
-function LabeledField({ label, className, children }: { label: string; className?: string; children: (id: string) => ReactNode }) {
+function LabeledField({
+	label,
+	className,
+	error,
+	children,
+}: {
+	label: string;
+	className?: string;
+	/** The API's messages for this field, shown under it. */
+	error?: string[];
+	children: (id: string, a11y: { 'aria-invalid'?: true; 'aria-describedby'?: string }) => ReactNode;
+}) {
 	const id = useId();
+	const errorId = `${id}-error`;
+	const message = error?.length ? error.join(' ') : null;
 	return (
 		<div className={className}>
 			<label htmlFor={id} className={FIELD_LABEL}>
 				{label}
 			</label>
-			{children(id)}
+			{children(id, message ? { 'aria-invalid': true, 'aria-describedby': errorId } : {})}
+			{message ? (
+				<p id={errorId} className="mt-1.5 text-xs text-[#E5787A]">
+					{message}
+				</p>
+			) : null}
 		</div>
 	);
 }

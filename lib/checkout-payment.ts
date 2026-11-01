@@ -5,6 +5,7 @@ import type {
 	PaymentInstructions,
 	PaymentProviderName,
 } from '@opencals/storefront-sdk';
+import { readFieldErrors, type ApiFieldErrors } from '@/lib/field-errors';
 
 /**
  * Client helpers for checkout: how a payment method is paid, its label, the
@@ -37,9 +38,11 @@ export interface CheckoutError extends Pick<Partial<CheckoutErrorResponse>, 'cod
 	status: number;
 	message: string;
 	errors?: Record<string, string[]>;
+	/** The API's validation errors, one per field path (`customer.phone`, …). */
+	fieldErrors?: ApiFieldErrors;
 }
 
-/** Reads `{ error, code, orderId, paymentStatus, errors }` from a failed `/api/checkout/*` response. */
+/** Reads `{ error, code, orderId, paymentStatus, errors, fieldErrors }` from a failed `/api/checkout/*` response. */
 export async function readCheckoutError(res: Response, fallback: string): Promise<CheckoutError> {
 	const data = (await res.json().catch(() => null)) as Record<string, unknown> | null;
 	const str = (v: unknown) => (typeof v === 'string' && v ? v : undefined);
@@ -51,6 +54,7 @@ export async function readCheckoutError(res: Response, fallback: string): Promis
 		orderId: str(data?.orderId),
 		paymentStatus: str(data?.paymentStatus),
 		errors: data?.errors && typeof data.errors === 'object' ? (data.errors as Record<string, string[]>) : undefined,
+		fieldErrors: readFieldErrors(data),
 	};
 }
 

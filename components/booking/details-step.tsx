@@ -3,6 +3,7 @@
 import { useId, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PHONE_HINT, PHONE_PLACEHOLDER } from '@/lib/field-errors';
 
 interface DetailsStepProps {
 	email: string;
@@ -52,22 +53,22 @@ export function DetailsStep({
 	const fields = (
 		<div className="space-y-5">
 			<div className="grid gap-5 sm:grid-cols-2">
-				<Field label="First name" error={fieldErrors.firstName?.[0]}>
-					{(id) => (
-						<Input id={id} type="text" autoComplete="given-name" value={firstName} onChange={(e) => onChangeFirstName(e.target.value)} />
+				<Field label="First name" error={fieldErrors.firstName}>
+					{(a11y) => (
+						<Input {...a11y} type="text" autoComplete="given-name" value={firstName} onChange={(e) => onChangeFirstName(e.target.value)} />
 					)}
 				</Field>
-				<Field label="Last name" error={fieldErrors.lastName?.[0]}>
-					{(id) => (
-						<Input id={id} type="text" autoComplete="family-name" value={lastName} onChange={(e) => onChangeLastName(e.target.value)} />
+				<Field label="Last name" error={fieldErrors.lastName}>
+					{(a11y) => (
+						<Input {...a11y} type="text" autoComplete="family-name" value={lastName} onChange={(e) => onChangeLastName(e.target.value)} />
 					)}
 				</Field>
 			</div>
 			<div className="grid gap-5 sm:grid-cols-2">
-				<Field label="Email" required error={fieldErrors.email?.[0]}>
-					{(id) => (
+				<Field label="Email" required error={fieldErrors.email}>
+					{(a11y) => (
 						<Input
-							id={id}
+							{...a11y}
 							type="email"
 							required
 							autoComplete="email"
@@ -78,17 +79,17 @@ export function DetailsStep({
 					)}
 				</Field>
 				{onChangePhone ? (
-					<Field label="Mobile (WhatsApp)" required={phoneRequired} error={fieldErrors.phone?.[0]}>
-						{(id) => (
+					<Field label="Mobile (WhatsApp)" required={phoneRequired} error={fieldErrors.phone} hint={PHONE_HINT}>
+						{(a11y) => (
 							<Input
-								id={id}
+								{...a11y}
 								type="tel"
 								required={phoneRequired}
 								autoComplete="tel"
 								inputMode="tel"
 								value={phone ?? ''}
 								onChange={(e) => onChangePhone(e.target.value)}
-								placeholder="+971 50 000 0000"
+								placeholder={PHONE_PLACEHOLDER}
 							/>
 						)}
 					</Field>
@@ -129,26 +130,51 @@ export function DetailsStep({
 	);
 }
 
+/** Props for the field's control: its id, plus aria-invalid and aria-describedby (hint, error). */
+export interface FieldControlProps {
+	id: string;
+	'aria-invalid'?: true;
+	'aria-describedby'?: string;
+}
+
 function Field({
 	label,
 	required,
 	error,
+	hint,
 	children,
 }: {
 	label: string;
 	required?: boolean;
-	error?: string;
-	children: (id: string) => ReactNode;
+	/** The field's messages (from the API or the client check), shown under it. */
+	error?: string[];
+	hint?: string;
+	children: (control: FieldControlProps) => ReactNode;
 }) {
 	const id = useId();
+	const hintId = `${id}-hint`;
+	const errorId = `${id}-error`;
+	const message = error?.length ? error.join(' ') : null;
+	// The error replaces the hint (the phone's error usually repeats it).
+	const showHint = !!hint && !message;
+	const describedBy = [showHint ? hintId : null, message ? errorId : null].filter(Boolean).join(' ');
 	return (
 		<div>
 			<label htmlFor={id} className="mb-2 block text-[0.68rem] uppercase tracking-[0.22em] text-[var(--color-ink-muted)]">
 				{label}
 				{required ? <span className="ml-1 text-[var(--color-primary)]">*</span> : null}
 			</label>
-			{children(id)}
-			{error ? <p className="mt-1.5 text-xs text-[#E5787A]">{error}</p> : null}
+			{children({ id, ...(message ? { 'aria-invalid': true } : {}), ...(describedBy ? { 'aria-describedby': describedBy } : {}) })}
+			{showHint ? (
+				<p id={hintId} className="mt-1.5 text-xs text-[var(--color-ink-dim)]">
+					{hint}
+				</p>
+			) : null}
+			{message ? (
+				<p id={errorId} className="mt-1.5 text-xs text-[#E5787A]">
+					{message}
+				</p>
+			) : null}
 		</div>
 	);
 }

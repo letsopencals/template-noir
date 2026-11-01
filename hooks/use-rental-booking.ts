@@ -11,6 +11,7 @@ import { useCartExpiry } from '@/hooks/use-cart-expiry';
 import { useFileUploads } from '@/hooks/use-file-upload';
 import { usePaymentProviders } from '@/hooks/use-payment-providers';
 import { useCheckoutPayment } from '@/hooks/use-checkout-payment';
+import { mapFieldErrors, phoneError, readFieldErrors, type ApiFieldErrors, type FieldErrors } from '@/lib/field-errors';
 
 export interface RentalBookingInput {
 	/** The car product: `id` books, `slug` keys questions, `variant` keys add-ons. */
@@ -27,6 +28,8 @@ export interface RentalBookingInput {
 	address: Address | null;
 	/** Called when the server says the dates were taken in the meantime. */
 	onSlotUnavailable?: () => void;
+	/** Called with the fields that just got an error, so the page can bring them into view. */
+	onFieldErrors?: (fields: string[]) => void;
 }
 
 interface Reservation {
@@ -38,7 +41,28 @@ interface Reservation {
 	linkedFiles: boolean;
 }
 
-type FieldErrors = Record<string, string[]>;
+/**
+ * API error paths → form fields. The checkout's delivery address copies the guest's name and phone, so those
+ * land on the details fields; the address itself on the "When & where" delivery fields (`address.*`).
+ */
+const FIELD_PATHS: Record<string, string> = {
+	firstName: 'firstName',
+	lastName: 'lastName',
+	email: 'email',
+	phone: 'phone',
+	'deliveryAddress.firstName': 'firstName',
+	'deliveryAddress.lastName': 'lastName',
+	'deliveryAddress.email': 'email',
+	'deliveryAddress.phone': 'phone',
+	'deliveryAddress.addressLine1': 'address.line1',
+	'deliveryAddress.addressLine2': 'address.line2',
+	'deliveryAddress.state': 'address.area',
+	'deliveryAddress.city': 'address.city',
+	'address.addressLine1': 'address.line1',
+	'address.addressLine2': 'address.line2',
+	'address.state': 'address.area',
+	'address.city': 'address.city',
+};
 
 async function readJson<T>(res: Response): Promise<T | null> {
 	return (await res.json().catch(() => null)) as T | null;
@@ -55,15 +79,15 @@ async function readJson<T>(res: Response): Promise<T | null> {
  * of the cart context.
  */
 export function useRentalBooking(input: RentalBookingInput) {
-	const { car, slot, units, locationId, customAttributes, address, onSlotUnavailable } = input;
+	const { car, slot, units, locationId, customAttributes, address, onSlotUnavailable, onFieldErrors } = input;
 	const { data: session } = useSession();
 	const { cartId: contextCartId, setCart } = useCart();
 
 	// Details
-	const [email, setEmail] = useState('');
-	const [firstName, setFirstName] = useState('');
-	const [lastName, setLastName] = useState('');
-	const [phone, setPhone] = useState('');
+	const [email, setEmailValue] = useState('');
+	const [firstName, setFirstNameValue] = useState('');
+	const [lastName, setLastNameValue] = useState('');
+	const [phone, setPhoneValue] = useState('');
 	const [customerId, setCustomerId] = useState<string | null>(null);
 	const prefilledRef = useRef(false);
 
@@ -72,9 +96,9 @@ export function useRentalBooking(input: RentalBookingInput) {
 		prefilledRef.current = true;
 		const c = session.customer;
 		if (c.id) setCustomerId(c.id);
-		if (c.email) setEmail(c.email);
-		if (c.firstName) setFirstName(c.firstName);
-		if (c.lastName) setLastName(c.lastName);
+		if (c.email) setEmailValue(c.email);
+		if (c.firstName) setFirstNameValue(c.firstName);
+		if (c.lastName) setLastNameValue(c.lastName);
 	}, [session]);
 
 	// Extras, questions, uploads
@@ -94,6 +118,55 @@ export function useRentalBooking(input: RentalBookingInput) {
 	const [error, setError] = useState<string | null>(null);
 	const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 	const [slotTaken, setSlotTaken] = useState(false);
+
+	/** Editing a field clears its error. */
+	const clearFieldError = useCallback((field: string) => {
+		setFieldErrors((prev) => {
+			if (!(field in prev)) return prev;
+			const next = { ...prev };
+			delete next[field];
+			return next;
+		});
+	}, []);
+	const setEmail = useCallback(
+		(v: string) => {
+			setEmailValue(v);
+			clearFieldError('email');
+		},
+		[clearFieldError],
+	);
+	const setFirstName = useCallback(
+		(v: string) => {
+			setFirstNameValue(v);
+			clearFieldError('firstName');
+		},
+		[clearFieldError],
+	);
+	const setLastName = useCallback(
+		(v: string) => {
+			setLastNameValue(v);
+			clearFieldError('lastName');
+		},
+		[clearFieldError],
+	);
+	const setPhone = useCallback(
+		(v: string) => {
+			setPhoneValue(v);
+			clearFieldError('phone');
+		},
+		[clearFieldError],
+	);
+
+	/** Puts the API's field errors under their fields; returns the messages that have no field here. */
+	const applyFieldErrors = useCallback(
+		(errors: ApiFieldErrors): string[] => {
+			const { mapped, unmapped } = mapFieldErrors(errors, FIELD_PATHS);
+			setFieldErrors(mapped);
+			if (Object.keys(mapped).length) onFieldErrors?.(Object.keys(mapped));
+			return unmapped;
+		},
+		[onFieldErrors],
+	);
 
 	const timeRemaining = useCartExpiry(reservation?.cart.expiresAt);
 	const isExpired = timeRemaining !== null && timeRemaining <= 0;
@@ -176,6 +249,12 @@ export function useRentalBooking(input: RentalBookingInput) {
 
 	const reserve = useCallback(async (): Promise<boolean> => {
 		if (!car || !slot) return false;
+		const badPhone = phoneError(phone);
+		if (badPhone) {
+			setFieldErrors({ phone: [badPhone] });
+			onFieldErrors?.(['phone']);
+			return false;
+		}
 		setReserving(true);
 		setError(null);
 		setFieldErrors({});
@@ -214,7 +293,7 @@ export function useRentalBooking(input: RentalBookingInput) {
 				itemId?: string | null;
 				error?: string;
 				code?: string;
-				errors?: FieldErrors;
+				fieldErrors?: ApiFieldErrors;
 			}>(res);
 
 			if (!res.ok) {
@@ -226,8 +305,10 @@ export function useRentalBooking(input: RentalBookingInput) {
 					// Held, but answers didn't save: keep the hold so a retry replaces it.
 					setReservation({ cart: data.cart, itemId: data.itemId ?? null, signature: '', linkedFiles: false });
 				}
-				if (data?.errors) setFieldErrors(data.errors);
-				setError(data?.error || 'Could not reserve this car. Try again.');
+				const apiFieldErrors = readFieldErrors(data);
+				const unmapped = apiFieldErrors?.length ? applyFieldErrors(apiFieldErrors) : null;
+				// The banner is for what can't be shown under a field.
+				setError(unmapped && !unmapped.length ? null : data?.error || 'Could not reserve this car. Try again.');
 				return false;
 			}
 			if (!data?.cart) throw new Error('Could not reserve this car. Try again.');
@@ -262,6 +343,9 @@ export function useRentalBooking(input: RentalBookingInput) {
 		onSlotUnavailable,
 		setCart,
 		signature,
+		phone,
+		onFieldErrors,
+		applyFieldErrors,
 	]);
 
 	const cartHeaders = useCallback(
@@ -299,7 +383,15 @@ export function useRentalBooking(input: RentalBookingInput) {
 		onSlotUnavailable?.();
 	}, [onSlotUnavailable]);
 
-	const payment = useCheckoutPayment({ providers, cartHeaders, checkoutCustomer, enabled: held, setError, onHoldLost });
+	const payment = useCheckoutPayment({
+		providers,
+		cartHeaders,
+		checkoutCustomer,
+		enabled: held,
+		setError,
+		onHoldLost,
+		onFieldErrors: applyFieldErrors,
+	});
 	const { reset: resetPayment } = payment;
 
 	// A new hold invalidates any started payment (amounts may differ).
@@ -332,6 +424,7 @@ export function useRentalBooking(input: RentalBookingInput) {
 		customerId,
 		detailsValid,
 		fieldErrors,
+		clearFieldError,
 		// hold
 		canReserve,
 		reserve,

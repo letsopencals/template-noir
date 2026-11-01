@@ -15,6 +15,7 @@ import type {
 } from '@opencals/storefront-sdk';
 import { useCart } from '@/contexts/cart-context';
 import { checkoutModeOf, readCheckoutError, rememberPaymentInstructions, type CheckoutError } from '@/lib/checkout-payment';
+import type { ApiFieldErrors } from '@/lib/field-errors';
 
 interface CheckoutPaymentInput {
 	providers: CustomerProviderCatalogItem[];
@@ -27,6 +28,11 @@ interface CheckoutPaymentInput {
 	setError: (message: string | null) => void;
 	/** The hold is gone (409 CART_EXPIRED): the guest has to pick new dates. */
 	onHoldLost?: () => void;
+	/**
+	 * A validation 400 with field errors: show them under the details fields. Returns the messages it couldn't
+	 * place on a field; when there are any, the error's message goes to the banner.
+	 */
+	onFieldErrors?: (errors: ApiFieldErrors) => string[];
 }
 
 class CheckoutFailure extends Error {
@@ -61,7 +67,7 @@ async function post(url: string, headers: Record<string, string>, body: object):
  * `no_payment_required` submits straight away. Submit stores any payment
  * instructions for `/thank-you`.
  */
-export function useCheckoutPayment({ providers, cartHeaders, checkoutCustomer, enabled, setError, onHoldLost }: CheckoutPaymentInput) {
+export function useCheckoutPayment({ providers, cartHeaders, checkoutCustomer, enabled, setError, onHoldLost, onFieldErrors }: CheckoutPaymentInput) {
 	const router = useRouter();
 	const { clearCart } = useCart();
 	const [provider, setProvider] = useState<PaymentProviderName | null>(null);
@@ -104,11 +110,17 @@ export function useCheckoutPayment({ providers, cartHeaders, checkoutCustomer, e
 				setError('Your card was not authorised and nothing was charged. Try again, or use another card.');
 				return false;
 			}
+			if (detail?.fieldErrors?.length && onFieldErrors) {
+				const unmapped = onFieldErrors(detail.fieldErrors);
+				setError(unmapped.length ? detail.message : null);
+				if (during === 'start') reset();
+				return false;
+			}
 			setError(err instanceof Error && err.message ? err.message : fallback);
 			if (during === 'start') reset();
 			return false;
 		},
-		[goToOrder, reset, setError, onHoldLost],
+		[goToOrder, reset, setError, onHoldLost, onFieldErrors],
 	);
 
 	const start = useCallback(

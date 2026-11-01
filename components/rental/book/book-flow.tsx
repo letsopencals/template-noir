@@ -47,6 +47,19 @@ export function BookFlow({ cars, initial }: BookFlowProps) {
 	const [reached, setReached] = useState<Step>(0);
 	const sectionRefs = useRef<Array<HTMLElement | null>>([]);
 
+	const scrollTo = useCallback(
+		(s: Step) => {
+			// Let the next section start unfolding before measuring.
+			window.setTimeout(() => {
+				const el = sectionRefs.current[s];
+				if (!el) return;
+				if (lenis) lenis.scrollTo(el, { offset: -96, duration: 1.1 });
+				else el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			}, 120);
+		},
+		[lenis],
+	);
+
 	// Keep the handover mode valid for the chosen car.
 	const { setMode } = h;
 	useEffect(() => {
@@ -65,6 +78,8 @@ export function BookFlow({ cars, initial }: BookFlowProps) {
 		void refresh();
 		setReached(0);
 	}, [refresh]);
+	// A field the API rejected: back to its section (the delivery address lives under "When & where").
+	const onFieldErrors = useCallback((fields: string[]) => scrollTo(fields.some((f) => f.startsWith('address.')) ? 0 : 2), [scrollTo]);
 
 	const b = useRentalBooking({
 		car: bookingCar,
@@ -74,24 +89,12 @@ export function BookFlow({ cars, initial }: BookFlowProps) {
 		customAttributes: h.customAttributes,
 		address: h.appointmentAddress,
 		onSlotUnavailable,
+		onFieldErrors,
 	});
 
 	const whenComplete = h.days > 0 && datesFit && !b.slotTaken && h.timesValid && h.addressValid && h.collectValid;
 	const unlocked = (s: Step) => s === 0 || (whenComplete && reached >= s && (s < 3 || b.reservation !== null));
 	const stateOf = (s: Step, complete: boolean): SectionState => (!unlocked(s) ? 'locked' : complete && reached > s ? 'done' : 'open');
-
-	const scrollTo = useCallback(
-		(s: Step) => {
-			// Let the next section start unfolding before measuring.
-			window.setTimeout(() => {
-				const el = sectionRefs.current[s];
-				if (!el) return;
-				if (lenis) lenis.scrollTo(el, { offset: -96, duration: 1.1 });
-				else el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-			}, 120);
-		},
-		[lenis],
-	);
 
 	const goTo = useCallback(
 		(s: Step) => {
@@ -160,6 +163,8 @@ export function BookFlow({ cars, initial }: BookFlowProps) {
 							slotTaken={b.slotTaken}
 							canContinue={whenComplete}
 							onContinue={() => goTo(1)}
+							fieldErrors={b.fieldErrors}
+							onFieldEdit={b.clearFieldError}
 						/>
 					</BookSection>
 

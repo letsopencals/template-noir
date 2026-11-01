@@ -50,8 +50,10 @@ function ErrorBanner({ message, onDismiss }: { message: string; onDismiss: () =>
 	);
 }
 
-function PickupField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function PickupField({ value, onChange, error }: { value: string; onChange: (v: string) => void; error?: string[] }) {
 	const id = useId();
+	const errorId = `${id}-error`;
+	const message = error?.length ? error.join(' ') : null;
 	return (
 		<div>
 			<label htmlFor={id} className="mb-2 block text-[0.66rem] uppercase tracking-[0.22em] text-[var(--color-ink-muted)]">
@@ -64,7 +66,13 @@ function PickupField({ value, onChange }: { value: string; onChange: (v: string)
 				placeholder="Hotel, villa or terminal. For arrivals, add your flight number."
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
+				{...(message ? { 'aria-invalid': true, 'aria-describedby': errorId } : {})}
 			/>
+			{message ? (
+				<p id={errorId} className="mt-1.5 text-xs text-[#E5787A]">
+					{message}
+				</p>
+			) : null}
 		</div>
 	);
 }
@@ -280,7 +288,7 @@ export function BookingView({
 										submitLabel={flow.committed ? 'Continue to payment' : 'Hold & continue'}
 									>
 										<div className="space-y-8">
-											{flow.needsPickupAddress ? <PickupField value={flow.pickupAddress} onChange={flow.setPickupAddress} /> : null}
+											{flow.needsPickupAddress ? <PickupField value={flow.pickupAddress} onChange={flow.setPickupAddress} error={flow.fieldErrors.pickupAddress} /> : null}
 											<PreferredCarPicker cars={cars} value={preferredSlug} onChange={(s) => flow.setCustomAttribute(preferredKey, s)} />
 										</div>
 									</DetailsStep>

@@ -22,8 +22,24 @@ import { usePaymentProviders } from '@/hooks/use-payment-providers';
 import { useCheckoutPayment } from '@/hooks/use-checkout-payment';
 import { useCustomDuration } from '@/hooks/use-custom-duration';
 import { useFileUploads } from '@/hooks/use-file-upload';
+import { mapFieldErrors, phoneError, readFieldErrors, type ApiFieldErrors, type FieldErrors } from '@/lib/field-errors';
 
-type FieldErrors = Record<string, string[]>;
+/**
+ * API error paths → details-step fields. The checkout's delivery address copies the guest's name and phone, and
+ * its first line is the pick-up address.
+ */
+const FIELD_PATHS: Record<string, string> = {
+	firstName: 'firstName',
+	lastName: 'lastName',
+	email: 'email',
+	phone: 'phone',
+	'deliveryAddress.firstName': 'firstName',
+	'deliveryAddress.lastName': 'lastName',
+	'deliveryAddress.email': 'email',
+	'deliveryAddress.phone': 'phone',
+	'deliveryAddress.addressLine1': 'pickupAddress',
+	'address.addressLine1': 'pickupAddress',
+};
 
 /**
  * The classic multi-step flow (chauffeur packages): when → chauffeur → extras →
@@ -79,6 +95,36 @@ export function useBookingFlow(slug: string, initialProduct: ProductListItemResp
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+
+	/** Editing a field clears its error. */
+	const clearFieldError = useCallback((field: string) => {
+		setFieldErrors((prev) => {
+			if (!(field in prev)) return prev;
+			const next = { ...prev };
+			delete next[field];
+			return next;
+		});
+	}, []);
+	const editField = useCallback(
+		(field: string, set: (v: string) => void) => (v: string) => {
+			set(v);
+			clearFieldError(field);
+		},
+		[clearFieldError],
+	);
+	const editEmail = useMemo(() => editField('email', setEmail), [editField]);
+	const editFirstName = useMemo(() => editField('firstName', setFirstName), [editField]);
+	const editLastName = useMemo(() => editField('lastName', setLastName), [editField]);
+	const editPhone = useMemo(() => editField('phone', setPhone), [editField]);
+	const editPickupAddress = useMemo(() => editField('pickupAddress', setPickupAddress), [editField]);
+
+	/** Puts the API's field errors under their fields (on the details step); returns the messages that have no field. */
+	const applyFieldErrors = useCallback((errors: ApiFieldErrors): string[] => {
+		const { mapped, unmapped } = mapFieldErrors(errors, FIELD_PATHS);
+		setFieldErrors(mapped);
+		if (Object.keys(mapped).length) setStep('details');
+		return unmapped;
+	}, []);
 
 	const finalStaffId = selectedStaffId ?? confirmedStaffId;
 	const isExpired = timeRemaining !== null && timeRemaining <= 0;
@@ -317,6 +363,11 @@ export function useBookingFlow(slug: string, initialProduct: ProductListItemResp
 
 	const handleSubmitDetails = useCallback(async () => {
 		if (!activeVariant || !availability.selectedSlot) return;
+		const badPhone = phoneError(phone);
+		if (badPhone) {
+			setFieldErrors({ phone: [badPhone] });
+			return;
+		}
 		setSubmitting(true);
 		setError(null);
 		setFieldErrors({});
@@ -358,7 +409,7 @@ export function useBookingFlow(slug: string, initialProduct: ProductListItemResp
 				itemId?: string | null;
 				error?: string;
 				code?: string;
-				errors?: FieldErrors;
+				fieldErrors?: ApiFieldErrors;
 			} | null;
 
 			if (!res.ok) {
@@ -370,7 +421,9 @@ export function useBookingFlow(slug: string, initialProduct: ProductListItemResp
 					availability.resetSlot();
 					setStep('when');
 				}
-				if (data?.errors) setFieldErrors(data.errors);
+				const apiFieldErrors = readFieldErrors(data);
+				// Under their fields; the banner only for what can't be placed.
+				if (apiFieldErrors?.length && !applyFieldErrors(apiFieldErrors).length) return;
 				throw new Error(data?.error || 'Could not save your details');
 			}
 
@@ -406,6 +459,8 @@ export function useBookingFlow(slug: string, initialProduct: ProductListItemResp
 		committedItemId,
 		setCart,
 		signature,
+		phone,
+		applyFieldErrors,
 	]);
 
 	const checkoutCustomer = useMemo(() => {
@@ -442,6 +497,7 @@ export function useBookingFlow(slug: string, initialProduct: ProductListItemResp
 		enabled: committed && !isExpired,
 		setError,
 		onHoldLost,
+		onFieldErrors: applyFieldErrors,
 	});
 	resetPaymentRef.current = payment.reset;
 
@@ -545,13 +601,13 @@ export function useBookingFlow(slug: string, initialProduct: ProductListItemResp
 
 		// Customer
 		email,
-		setEmail,
+		setEmail: editEmail,
 		firstName,
-		setFirstName,
+		setFirstName: editFirstName,
 		lastName,
-		setLastName,
+		setLastName: editLastName,
 		phone,
-		setPhone,
+		setPhone: editPhone,
 		customerId,
 
 		// Appointment extras
@@ -559,7 +615,7 @@ export function useBookingFlow(slug: string, initialProduct: ProductListItemResp
 		setCustomAttribute,
 		needsPickupAddress,
 		pickupAddress,
-		setPickupAddress,
+		setPickupAddress: editPickupAddress,
 
 		// Questions
 		questions,
