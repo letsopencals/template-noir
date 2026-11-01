@@ -8,17 +8,15 @@ import type {
 	CreateAppointmentAddOn,
 	ExistingAppointmentCustomer,
 	NewAppointmentCustomer,
-	NewOrderCustomer,
 } from '@opencals/storefront-sdk';
 import { getAccessToken } from '@/lib/api-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/lib/api-error-handler';
 
 /**
- * The appointment customer. The client sends its checkout customer here; only these fields are read. `phone` isn't
- * on the SDK's NewAppointmentCustomer, but the API stores it on a new customer, so it's still passed through.
+ * The appointment customer. The client sends its checkout customer here; only these fields are read.
  */
-type BookCustomer = ExistingAppointmentCustomer | (NewAppointmentCustomer & Pick<NewOrderCustomer, 'phone'>);
+type BookCustomer = ExistingAppointmentCustomer | NewAppointmentCustomer;
 
 interface BookInput {
 	slot: AppointmentDateRangeSlot;
