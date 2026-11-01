@@ -27,7 +27,7 @@ export interface ConfirmedBooking {
 	preferredCar: string | null;
 	chauffeur: string | null;
 	depositAed: number | null;
-	status: string;
+	status: OrderDetailAppointment['status'];
 	/**
 	 * Why the booking still waits: set only for `pending` appointments with a reason. A pending booking without
 	 * one (an automatic store confirming it in the background right after checkout) counts as confirmed.
@@ -75,7 +75,7 @@ export function toConfirmedBooking(a: OrderDetailAppointment): ConfirmedBooking 
 		preferredCar: preferredSlug ? titleFromSlug(preferredSlug) : null,
 		chauffeur: staff || null,
 		depositAed: content?.depositAed ?? null,
-		status: (a.status ?? '').toLowerCase(),
+		status: a.status,
 		pendingReason: a.status === 'pending' && a.pendingReason ? a.pendingReason : null,
 	};
 }

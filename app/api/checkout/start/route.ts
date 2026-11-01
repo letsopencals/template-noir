@@ -26,8 +26,7 @@ export async function POST(request: NextRequest) {
 		const customer = toCheckoutCustomer(raw.customer, raw.deliveryAddress);
 		const token = await getAccessToken();
 		const { data } = await CheckoutService.start({
-			// Cast: `customer.deliveryAddress` is accepted by the API but missing from SDK 0.3.14 types.
-			body: { provider, ...(customer ? { customer } : {}) } as StartCheckout,
+			body: { provider, ...(customer ? { customer } : {}) },
 			headers: { Authorization: `Bearer ${token ?? ''}`, 'X-Cart-Id': cartId },
 			throwOnError: true,
 		});

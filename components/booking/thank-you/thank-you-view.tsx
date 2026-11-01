@@ -46,7 +46,7 @@ function Row({ label, value, accent = false }: { label: string; value: string; a
 }
 
 /** Payment status for the summary. Never a raw value or a blank. */
-function paymentLabel(order: OrderDetailResponse, provider: string | null): string {
+function paymentLabel(order: OrderDetailResponse, provider: PaymentInstructions['provider'] | null): string {
 	if (order.isFullyPaid || order.paymentStatus === 'paid') return 'Paid';
 	if (order.paymentStatus === 'partially-paid') return 'Part paid';
 	if (order.paymentStatus === 'voided') return 'Cancelled — not charged';

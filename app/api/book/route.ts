@@ -1,46 +1,24 @@
 import '@/lib/opencals';
 import { AppointmentService, CartService, CheckoutService, OpencalsApiError } from '@opencals/storefront-sdk';
-import type { Address, CartResponse } from '@opencals/storefront-sdk';
+import type {
+	Address,
+	AppointmentDateRangeSlot,
+	CartResponse,
+	CheckoutQuestionAnswer,
+	CreateAppointmentAddOn,
+	ExistingOrderCustomer,
+	NewOrderCustomer,
+} from '@opencals/storefront-sdk';
 import { getAccessToken } from '@/lib/api-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/lib/api-error-handler';
 
-interface AddOnSelection {
-	addOnId: string;
-	quantity?: number;
-}
-
-interface QuestionAnswerInput {
-	questionId: string;
-	question: string;
-	answer: string;
-	/** Ids from /api/uploads/presign, for file-upload questions. */
-	fileIds?: string[];
-}
-
-interface CustomerInput {
-	kind: 'new' | 'existing';
-	customerId?: string;
-	email?: string;
-	firstName?: string;
-	lastName?: string;
-	phone?: string;
-}
-
 interface BookInput {
-	slot: {
-		productId: string;
-		fromDate: string;
-		fromTime: string;
-		toDate: string;
-		toTime: string;
-		staffMemberId?: string | null;
-		locationId?: string | null;
-	};
+	slot: AppointmentDateRangeSlot;
 	numberOfAttendees?: number;
-	addOns?: AddOnSelection[];
-	customer?: CustomerInput;
-	checkoutQuestionAnswers?: QuestionAnswerInput[];
+	addOns?: CreateAppointmentAddOn[];
+	customer?: ExistingOrderCustomer | NewOrderCustomer;
+	checkoutQuestionAnswers?: CheckoutQuestionAnswer[];
 	/** String key/values stored on the appointment (handover_time, return_time, …). */
 	customAttributes?: Record<string, string>;
 	/** Delivery address. The backend stores it only when the location is a `delivery` location. */
@@ -76,10 +54,10 @@ function sanitizeAddress(input: unknown): Address | null {
 	return out.addressLine1 || out.city ? out : null;
 }
 
-function sanitizeAnswers(input: unknown): QuestionAnswerInput[] {
+function sanitizeAnswers(input: unknown): CheckoutQuestionAnswer[] {
 	if (!Array.isArray(input)) return [];
 	return input
-		.filter((a): a is QuestionAnswerInput => !!a && typeof a.questionId === 'string' && typeof a.answer === 'string')
+		.filter((a): a is CheckoutQuestionAnswer => !!a && typeof a.questionId === 'string' && typeof a.answer === 'string')
 		.map((a) => ({
 			questionId: a.questionId,
 			question: typeof a.question === 'string' ? a.question : '',
@@ -88,6 +66,19 @@ function sanitizeAnswers(input: unknown): QuestionAnswerInput[] {
 				? { fileIds: a.fileIds.filter((id): id is string => typeof id === 'string') }
 				: {}),
 		}));
+}
+
+/** The order customer from the client, as the appointment's customer (an existing id, or a new guest by email). */
+function toAppointmentCustomer(customer: ExistingOrderCustomer | NewOrderCustomer) {
+	if (customer.kind === 'existing' && customer.customerId) return { customerId: customer.customerId };
+	const email = ('email' in customer ? customer.email : undefined) ?? '';
+	return {
+		externalId: email,
+		email,
+		firstName: customer.firstName,
+		lastName: customer.lastName,
+		...(customer.phone ? { phone: customer.phone } : {}),
+	};
 }
 
 /** Slot conflicts read better as one plain sentence than the backend's wording. */
@@ -183,16 +174,7 @@ export async function POST(request: NextRequest) {
 					})),
 				...(customer
 					? {
-							customer:
-								customer.kind === 'existing' && customer.customerId
-									? { customerId: customer.customerId }
-									: {
-											externalId: customer.email ?? '',
-											email: customer.email ?? '',
-											firstName: customer.firstName,
-											lastName: customer.lastName,
-											...(customer.phone ? { phone: customer.phone } : {}),
-										},
+							customer: toAppointmentCustomer(customer),
 						}
 					: {}),
 				...(customAttributes && Object.keys(customAttributes).length > 0

@@ -1,4 +1,5 @@
 import moment from 'moment-timezone';
+import type { AppointmentDateRangeSlot, CurrentAvailabilitySlot } from '@opencals/storefront-sdk';
 
 /**
  * Pure helpers for day-based car rentals.
@@ -17,24 +18,10 @@ import moment from 'moment-timezone';
  */
 
 /** The range shape returned by `getCurrentAvailabilitiesMerged` (UTC). */
-export interface AvailabilityRange {
-	fromDate: string;
-	fromTime: string;
-	toDate: string;
-	toTime: string;
-}
+export type AvailabilityRange = Pick<CurrentAvailabilitySlot, 'fromDate' | 'fromTime' | 'toDate' | 'toTime'>;
 
-/** Time part of the slot `AppointmentService.create` expects (all UTC). */
-export interface RentalSlotTimes {
-	/** 'YYYY-MM-DD' (UTC) */
-	fromDate: string;
-	/** 'HH:mm:ss' (UTC) */
-	fromTime: string;
-	/** 'YYYY-MM-DD' (UTC) */
-	toDate: string;
-	/** 'HH:mm:ss' (UTC) */
-	toTime: string;
-}
+/** Time part of the slot `AppointmentService.create` expects (all UTC: 'YYYY-MM-DD' dates, 'HH:mm:ss' times). */
+export type RentalSlotTimes = Pick<AppointmentDateRangeSlot, 'fromDate' | 'fromTime' | 'toDate' | 'toTime'>;
 
 export type Instant = Date | string | number;
 

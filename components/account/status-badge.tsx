@@ -1,7 +1,9 @@
 import { memo } from 'react';
 import { clsx } from 'clsx';
+import type { AppointmentStatusType, OrderListItemResponse, StorefrontAppointmentPendingReason } from '@opencals/storefront-sdk';
 
 type Tone = 'accent' | 'positive' | 'neutral' | 'warning' | 'negative';
+type Badge = { label: string; tone: Tone };
 
 const TONE: Record<Tone, { text: string; dot: string }> = {
 	accent: { text: 'text-[var(--color-primary-bright)]', dot: 'bg-[var(--color-primary)]' },
@@ -11,7 +13,7 @@ const TONE: Record<Tone, { text: string; dot: string }> = {
 	negative: { text: 'text-red-300', dot: 'bg-red-400' },
 };
 
-const APPOINTMENT: Record<string, { label: string; tone: Tone }> = {
+const APPOINTMENT: Record<string, Badge> = {
 	scheduled: { label: 'Booked', tone: 'accent' },
 	confirmed: { label: 'Confirmed', tone: 'positive' },
 	completed: { label: 'Completed', tone: 'neutral' },
@@ -20,27 +22,27 @@ const APPOINTMENT: Record<string, { label: string; tone: Tone }> = {
 	pending: { label: 'Booked', tone: 'accent' },
 	awaiting_payment: { label: 'Awaiting payment', tone: 'warning' },
 	awaiting_approval: { label: 'Awaiting confirmation', tone: 'warning' },
-};
+} satisfies Record<AppointmentStatusType | StorefrontAppointmentPendingReason | 'confirmed', Badge>;
 
-const PAYMENT: Record<string, { label: string; tone: Tone }> = {
+const PAYMENT: Record<string, Badge> = {
 	paid: { label: 'Paid', tone: 'positive' },
 	unpaid: { label: 'Unpaid', tone: 'warning' },
 	'partially-paid': { label: 'Part paid', tone: 'warning' },
 	voided: { label: 'Cancelled — not charged', tone: 'neutral' },
-};
+} satisfies Record<OrderListItemResponse['paymentStatus'], Badge>;
 
-const FULFILLMENT: Record<string, { label: string; tone: Tone }> = {
+const FULFILLMENT: Record<string, Badge> = {
 	fulfilled: { label: 'Fulfilled', tone: 'positive' },
 	unfulfilled: { label: 'Unfulfilled', tone: 'neutral' },
 	'partially-fulfilled': { label: 'Part fulfilled', tone: 'warning' },
-};
+} satisfies Record<OrderListItemResponse['fulfillmentStatus'], Badge>;
 
-const REFUND: Record<string, { label: string; tone: Tone }> = {
+const REFUND: Record<string, Badge> = {
 	'refund-owed': { label: 'Refund owed', tone: 'negative' },
 	'partially-refunded': { label: 'Part refunded', tone: 'warning' },
 	'fully-refunded': { label: 'Refunded', tone: 'negative' },
 	unrefunded: { label: 'Not refunded', tone: 'neutral' },
-};
+} satisfies Record<OrderListItemResponse['refundStatus'], Badge>;
 
 const MAPS = { appointment: APPOINTMENT, payment: PAYMENT, fulfillment: FULFILLMENT, refund: REFUND } as const;
 
@@ -62,7 +64,7 @@ export const StatusBadge = memo(function StatusBadge({
 }: {
 	kind: keyof typeof MAPS;
 	status: string | null | undefined;
-	pendingReason?: string | null;
+	pendingReason?: StorefrontAppointmentPendingReason | null;
 	className?: string;
 }) {
 	const key = kind === 'appointment' && status === 'pending' && pendingReason ? pendingReason : (status ?? '');

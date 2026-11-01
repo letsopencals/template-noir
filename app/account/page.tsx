@@ -12,12 +12,10 @@ import { AppointmentRow } from '@/components/account/appointment-row';
 import { StatusBadge } from '@/components/account/status-badge';
 import { onSessionExpired } from '@/lib/session-expired';
 
-type OrderWithId = OrderListItemResponse & { id: string };
-
 export default function AccountDashboard() {
 	const { data: session } = useSession();
 	const [appointments, setAppointments] = useState<AppointmentListItemResponse[]>([]);
-	const [orders, setOrders] = useState<OrderWithId[]>([]);
+	const [orders, setOrders] = useState<OrderListItemResponse[]>([]);
 	const [loading, setLoading] = useState(true);
 	const { formatDate } = useDateFormatter();
 
@@ -35,7 +33,7 @@ export default function AccountDashboard() {
 					setAppointments(data.data ?? []);
 				}
 				if (ordersRes.ok) {
-					const data: { data: OrderWithId[]; meta: CollectionMeta } = await ordersRes.json();
+					const data: { data: OrderListItemResponse[]; meta: CollectionMeta } = await ordersRes.json();
 					setOrders(data.data ?? []);
 				}
 			} catch {

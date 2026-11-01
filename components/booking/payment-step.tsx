@@ -4,15 +4,15 @@ import { clsx } from 'clsx';
 import type { CheckoutStartResponse, CustomerProviderCatalogItem } from '@opencals/storefront-sdk';
 import { StripePayment } from '@/components/booking/stripe-payment';
 import { Button } from '@/components/ui/button';
-import { checkoutModeOf, providerLabel } from '@/lib/checkout-payment';
+import { checkoutModeOf, providerLabel, type ProviderName } from '@/lib/checkout-payment';
 
 interface PaymentStepProps {
 	providers: CustomerProviderCatalogItem[];
-	provider: string | null;
+	provider: ProviderName | null;
 	paymentData: CheckoutStartResponse | null;
 	submitting: boolean;
 	isExpired: boolean;
-	onSelectProvider: (providerName: string) => void;
+	onSelectProvider: (providerName: ProviderName) => void;
 	onStripeSuccess: (paymentIntentId: string) => void;
 	onStripeError: (message: string) => void;
 	/** Manual methods (cash, bank transfer, invoice) and "nothing to pay": start + submit. */
@@ -132,7 +132,7 @@ export function PaymentStep({
 
 /** Confirm-panel copy for a manual or no-payment method. Never promises "pay at handover" for invoices or transfers. */
 function manualCopy(
-	p: { name: string; displayName?: string | null; description?: string | null },
+	p: Pick<CustomerProviderCatalogItem, 'name'> & Partial<Pick<CustomerProviderCatalogItem, 'displayName' | 'description'>>,
 	cash: { cashTitle: string; cashBody: string },
 ): { title: string; body: string } {
 	switch (p.name) {

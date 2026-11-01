@@ -1,9 +1,9 @@
 import { OpencalsApiError } from '@opencals/storefront-sdk';
 import { NextResponse } from 'next/server';
 
-/** A string field from the API's parsed error body (`OpencalsApiError.body`, SDK 0.4+). */
+/** A string field from the API's parsed error body (`OpencalsApiError.body`). */
 function errorField(err: OpencalsApiError, key: 'orderId' | 'paymentStatus'): string | undefined {
-	const value = (err as { body?: Record<string, unknown> | null }).body?.[key];
+	const value = err.body?.[key];
 	return typeof value === 'string' ? value : undefined;
 }
 

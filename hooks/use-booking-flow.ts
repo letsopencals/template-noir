@@ -5,6 +5,8 @@ import { useSession } from 'next-auth/react';
 import type {
 	Address,
 	CurrentAvailabilitySlot,
+	ExistingOrderCustomer,
+	NewOrderCustomer,
 	ProductListItemResponse,
 } from '@opencals/storefront-sdk';
 import type { BookingStep } from '@/lib/booking-constants';
@@ -262,15 +264,15 @@ export function useBookingFlow(slug: string, initialProduct: ProductListItemResp
 		setStep('details');
 	}, []);
 
-	const customerPayload = useMemo(() => {
+	const customerPayload = useMemo((): ExistingOrderCustomer | NewOrderCustomer => {
 		const extra = {
 			firstName: firstName.trim() || undefined,
 			lastName: lastName.trim() || undefined,
 			phone: phone.trim() || undefined,
 		};
 		return customerId
-			? { kind: 'existing' as const, customerId, ...extra }
-			: { kind: 'new' as const, email: email.trim(), ...extra };
+			? { kind: 'existing', customerId, ...extra }
+			: { kind: 'new', email: email.trim(), ...extra };
 	}, [customerId, email, firstName, lastName, phone]);
 
 	const addOnPayload = useMemo(
@@ -415,9 +417,9 @@ export function useBookingFlow(slug: string, initialProduct: ProductListItemResp
 				? {
 						deliveryAddress: {
 							...address,
-							firstName: customerPayload.firstName,
-							lastName: customerPayload.lastName,
-							phone: customerPayload.phone,
+							firstName: customerPayload.firstName ?? undefined,
+							lastName: customerPayload.lastName ?? undefined,
+							phone: customerPayload.phone ?? undefined,
 						},
 					}
 				: {}),

@@ -7,11 +7,14 @@ import type { CustomerProviderCatalogItem, PaymentInstructions } from '@opencals
  */
 
 export type CheckoutMode = CustomerProviderCatalogItem['checkoutMode'];
+export type ProviderName = CustomerProviderCatalogItem['name'];
 
-const MANUAL = new Set(['cash', 'bank_transfer', 'stripe_invoice']);
+const MANUAL = new Set<ProviderName>(['cash', 'bank_transfer', 'stripe_invoice']);
 
 /** The catalog's checkoutMode, with a fallback for responses that predate it. */
-export function checkoutModeOf(provider: { name: string; checkoutMode?: CheckoutMode } | undefined | null): CheckoutMode {
+export function checkoutModeOf(
+	provider: Pick<CustomerProviderCatalogItem, 'name'> & Partial<Pick<CustomerProviderCatalogItem, 'checkoutMode'>> | undefined | null,
+): CheckoutMode {
 	if (provider?.checkoutMode) return provider.checkoutMode;
 	const name = provider?.name;
 	if (name === 'no_payment_required') return 'none';
@@ -20,7 +23,7 @@ export function checkoutModeOf(provider: { name: string; checkoutMode?: Checkout
 }
 
 /** "bank_transfer" → "Bank transfer", for providers without a display name. */
-export function providerLabel(provider: { name: string; displayName?: string | null }): string {
+export function providerLabel(provider: Pick<CustomerProviderCatalogItem, 'name'> & Partial<Pick<CustomerProviderCatalogItem, 'displayName'>>): string {
 	if (provider.displayName?.trim()) return provider.displayName;
 	const words = String(provider.name).replace(/[_-]+/g, ' ').trim();
 	return words ? words.charAt(0).toUpperCase() + words.slice(1) : 'Payment';

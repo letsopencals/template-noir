@@ -23,8 +23,7 @@ export async function POST(request: NextRequest) {
 			...(raw.trackingData && typeof raw.trackingData === 'object'
 				? { trackingData: raw.trackingData as SubmitCheckout['trackingData'] }
 				: {}),
-			// Cast: `customer.deliveryAddress` is accepted by the API but missing from SDK 0.3.14 types.
-			...(customer ? { customer: customer as SubmitCheckout['customer'] } : {}),
+			...(customer ? { customer } : {}),
 		};
 		const token = await getAccessToken();
 		const { data } = await CheckoutService.submit({

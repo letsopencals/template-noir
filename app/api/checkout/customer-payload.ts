@@ -1,27 +1,7 @@
-import type { ExistingOrderCustomer, NewOrderCustomer } from '@opencals/storefront-sdk';
+import type { Address, ExistingOrderCustomer, NewOrderCustomer } from '@opencals/storefront-sdk';
 
-/**
- * Delivery address on the checkout customer. The backend (`AddressDto`) accepts
- * it on start/submit, but the pinned SDK 0.3.14 types predate the field, hence
- * the widened type and the cast at the call site.
- */
-export interface DeliveryAddressInput {
-	firstName?: string;
-	lastName?: string;
-	addressLine1?: string;
-	addressLine2?: string;
-	city?: string;
-	state?: string;
-	postalCode?: string;
-	/** ISO 3166-1 alpha-2, uppercase. */
-	country?: string;
-	phone?: string;
-	email?: string;
-}
-
-export type CheckoutCustomer = (ExistingOrderCustomer | NewOrderCustomer) & {
-	deliveryAddress?: DeliveryAddressInput;
-};
+/** The checkout customer: the SDK union, with the delivery address nested on it. */
+export type CheckoutCustomer = ExistingOrderCustomer | NewOrderCustomer;
 
 const ADDRESS_KEYS = [
 	'firstName',
@@ -34,16 +14,16 @@ const ADDRESS_KEYS = [
 	'country',
 	'phone',
 	'email',
-] as const;
+] as const satisfies ReadonlyArray<keyof Address>;
 
 function str(v: unknown): string | undefined {
 	return typeof v === 'string' && v.trim() ? v.trim().slice(0, 255) : undefined;
 }
 
-function sanitizeAddress(input: unknown): DeliveryAddressInput | null {
+function sanitizeAddress(input: unknown): Address | null {
 	if (!input || typeof input !== 'object') return null;
 	const src = input as Record<string, unknown>;
-	const out: DeliveryAddressInput = {};
+	const out: Address = {};
 	for (const key of ADDRESS_KEYS) {
 		const v = str(src[key]);
 		if (v) out[key] = v;
@@ -69,6 +49,7 @@ export function toCheckoutCustomer(customer: unknown, deliveryAddress: unknown):
 	const customerId = str(c.customerId);
 	if (customerId) {
 		return {
+			kind: 'existing',
 			customerId,
 			...(str(c.firstName) ? { firstName: str(c.firstName) } : {}),
 			...(str(c.lastName) ? { lastName: str(c.lastName) } : {}),
@@ -78,6 +59,7 @@ export function toCheckoutCustomer(customer: unknown, deliveryAddress: unknown):
 	const email = str(c.email);
 	if (!email) return undefined;
 	return {
+		kind: 'new',
 		externalId: str(c.externalId) ?? email,
 		email,
 		...(str(c.firstName) ? { firstName: str(c.firstName) } : {}),

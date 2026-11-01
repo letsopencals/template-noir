@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { CheckoutQuestionResponse } from '@opencals/storefront-sdk';
+import type { CheckoutQuestionResponse, GenerateUploadUrlResponse } from '@opencals/storefront-sdk';
 
 /* ----------------------------------------------------------- file config */
 
@@ -124,12 +124,6 @@ export interface UploadItem {
 
 export type UploadsByQuestion = Record<string, UploadItem[]>;
 
-interface PresignResponse {
-	fileId: string;
-	presignedUrl: string;
-	expiresIn: number;
-}
-
 let keySeq = 0;
 const nextKey = () => `up-${Date.now().toString(36)}-${(keySeq++).toString(36)}`;
 
@@ -192,7 +186,7 @@ export function useFileUploads() {
 					body: JSON.stringify({ questionId, filename: item.filename, mime: item.mime, size: item.size }),
 					signal: controller.signal,
 				});
-				const data = (await res.json().catch(() => null)) as (PresignResponse & { error?: string }) | null;
+				const data = (await res.json().catch(() => null)) as (GenerateUploadUrlResponse & { error?: string }) | null;
 				if (!res.ok || !data?.presignedUrl) throw new Error(data?.error || 'Could not prepare the upload');
 				await putWithProgress(
 					data.presignedUrl,

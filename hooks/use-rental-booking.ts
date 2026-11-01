@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import type { Address, CartResponse, ProductListVariant } from '@opencals/storefront-sdk';
+import type { Address, CartResponse, ExistingOrderCustomer, NewOrderCustomer, ProductListVariant } from '@opencals/storefront-sdk';
 import type { RentalSlotTimes } from '@/lib/rental';
 import { useCart } from '@/contexts/cart-context';
 import { useBookingAddOns } from '@/hooks/use-booking-add-ons';
@@ -111,17 +111,17 @@ export function useRentalBooking(input: RentalBookingInput) {
 	);
 
 	const customer = useMemo(
-		() =>
+		(): ExistingOrderCustomer | NewOrderCustomer =>
 			customerId
 				? {
-						kind: 'existing' as const,
+						kind: 'existing',
 						customerId,
 						firstName: firstName.trim() || undefined,
 						lastName: lastName.trim() || undefined,
 						phone: phone.trim() || undefined,
 					}
 				: {
-						kind: 'new' as const,
+						kind: 'new',
 						email: email.trim(),
 						firstName: firstName.trim() || undefined,
 						lastName: lastName.trim() || undefined,
@@ -274,21 +274,22 @@ export function useRentalBooking(input: RentalBookingInput) {
 
 	const checkoutCustomer = useMemo(
 		() => ({
-			customer: customerId
-				? { customerId, firstName: customer.firstName, lastName: customer.lastName, phone: customer.phone }
-				: { email: customer.email, firstName: customer.firstName, lastName: customer.lastName, phone: customer.phone },
+			customer:
+				'customerId' in customer
+					? { customerId: customer.customerId, firstName: customer.firstName, lastName: customer.lastName, phone: customer.phone }
+					: { email: customer.email, firstName: customer.firstName, lastName: customer.lastName, phone: customer.phone },
 			...(address
 				? {
 						deliveryAddress: {
 							...address,
-							firstName: customer.firstName,
-							lastName: customer.lastName,
-							phone: customer.phone,
+							firstName: customer.firstName ?? undefined,
+							lastName: customer.lastName ?? undefined,
+							phone: customer.phone ?? undefined,
 						},
 					}
 				: {}),
 		}),
-		[customerId, customer, address],
+		[customer, address],
 	);
 
 	// The hold is gone (CART_EXPIRED at checkout): back to the dates, like a taken slot.
