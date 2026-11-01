@@ -256,7 +256,7 @@ export function BookFlow({ cars, initial }: BookFlowProps) {
 									onSelectProvider={b.selectProvider}
 									onStripeSuccess={(pi) => void b.submitCheckout(pi)}
 									onStripeError={b.setError}
-									onSubmitCash={() => void b.submitCheckout()}
+									onConfirmManual={() => void b.confirmManual()}
 									bare
 								/>
 								{b.error ? (

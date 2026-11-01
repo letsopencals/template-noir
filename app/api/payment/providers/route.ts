@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 		const { data } = await PaymentService.getAvailableProviders(
 			{ headers: { 'X-Cart-Id': cartId } },
 		);
-		return NextResponse.json(data);
+		return NextResponse.json(Array.isArray(data) ? data : []);
 	} catch (err) {
 		return handleApiError(err);
 	}

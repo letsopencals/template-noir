@@ -16,13 +16,17 @@ const APPOINTMENT: Record<string, { label: string; tone: Tone }> = {
 	confirmed: { label: 'Confirmed', tone: 'positive' },
 	completed: { label: 'Completed', tone: 'neutral' },
 	canceled: { label: 'Cancelled', tone: 'negative' },
-	pending: { label: 'Pending', tone: 'warning' },
+	// A pending booking without a reason is being confirmed right after checkout: show it as booked.
+	pending: { label: 'Booked', tone: 'accent' },
+	awaiting_payment: { label: 'Awaiting payment', tone: 'warning' },
+	awaiting_approval: { label: 'Awaiting confirmation', tone: 'warning' },
 };
 
 const PAYMENT: Record<string, { label: string; tone: Tone }> = {
 	paid: { label: 'Paid', tone: 'positive' },
 	unpaid: { label: 'Unpaid', tone: 'warning' },
 	'partially-paid': { label: 'Part paid', tone: 'warning' },
+	voided: { label: 'Cancelled — not charged', tone: 'neutral' },
 };
 
 const FULFILLMENT: Record<string, { label: string; tone: Tone }> = {
@@ -40,17 +44,29 @@ const REFUND: Record<string, { label: string; tone: Tone }> = {
 
 const MAPS = { appointment: APPOINTMENT, payment: PAYMENT, fulfillment: FULFILLMENT, refund: REFUND } as const;
 
-/** Hairline status plate with a coloured dot. */
+/** "partially-fulfilled" → "Partially fulfilled", for values the maps don't know yet. */
+function humanise(status: string): string {
+	const words = status.replace(/[_-]+/g, ' ').trim();
+	return words ? words.charAt(0).toUpperCase() + words.slice(1) : 'Unknown';
+}
+
+/**
+ * Hairline status plate with a coloured dot. For appointments pass `pendingReason`: a pending booking with a
+ * reason reads "Awaiting payment" / "Awaiting confirmation".
+ */
 export const StatusBadge = memo(function StatusBadge({
 	kind,
 	status,
+	pendingReason,
 	className,
 }: {
 	kind: keyof typeof MAPS;
-	status: string;
+	status: string | null | undefined;
+	pendingReason?: string | null;
 	className?: string;
 }) {
-	const c = MAPS[kind][status] ?? { label: status, tone: 'neutral' as Tone };
+	const key = kind === 'appointment' && status === 'pending' && pendingReason ? pendingReason : (status ?? '');
+	const c = MAPS[kind][key] ?? { label: humanise(key), tone: 'neutral' as Tone };
 	const t = TONE[c.tone];
 	return (
 		<span

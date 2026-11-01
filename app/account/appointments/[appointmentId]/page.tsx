@@ -99,7 +99,7 @@ export default function AppointmentDetailPage() {
 			<AccountHeading
 				eyebrow={`${rental ? 'Rental' : meta.kind === 'chauffeur' ? 'Chauffeur' : 'Booking'} · No. ${appointment.name}`}
 				title={meta.title}
-				action={<StatusBadge kind="appointment" status={appointment.status} />}
+				action={<StatusBadge kind="appointment" status={appointment.status} pendingReason={appointment.pendingReason} />}
 			/>
 
 			<div className="mt-10 grid gap-8 lg:grid-cols-3">

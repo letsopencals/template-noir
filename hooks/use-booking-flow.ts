@@ -1,11 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { signIn, useSession } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import type {
 	Address,
-	CheckoutStartResponse,
 	CurrentAvailabilitySlot,
 	ProductListItemResponse,
 } from '@opencals/storefront-sdk';
@@ -19,6 +17,7 @@ import { useAvailability } from '@/hooks/use-availability';
 import { useBookingAddOns } from '@/hooks/use-booking-add-ons';
 import { buildAnswerPayload, questionsComplete, useCheckoutQuestions } from '@/hooks/use-checkout-questions';
 import { usePaymentProviders } from '@/hooks/use-payment-providers';
+import { useCheckoutPayment } from '@/hooks/use-checkout-payment';
 import { useCustomDuration } from '@/hooks/use-custom-duration';
 import { useFileUploads } from '@/hooks/use-file-upload';
 
@@ -35,7 +34,6 @@ type FieldErrors = Record<string, string[]>;
  * "Continue to payment", so stale holds never block the new time.
  */
 export function useBookingFlow(slug: string, initialProduct: ProductListItemResponse | null = null) {
-	const router = useRouter();
 	const { data: session } = useSession();
 	const { cartId, setCart, clearCart, timeRemaining } = useCart();
 	const { selectedLocationId: globalLocationId } = useLocation();
@@ -67,9 +65,8 @@ export function useBookingFlow(slug: string, initialProduct: ProductListItemResp
 	const [answers, setAnswers] = useState<Record<string, string>>({});
 	const uploads = useFileUploads();
 
-	// Payment
-	const [provider, setProvider] = useState<string | null>(null);
-	const [paymentData, setPaymentData] = useState<CheckoutStartResponse | null>(null);
+	// Payment (useCheckoutPayment, below); a new or dropped hold resets it through this ref.
+	const resetPaymentRef = useRef<() => void>(() => {});
 
 	// Flow
 	const [step, setStep] = useState<BookingStep>('when');
@@ -185,8 +182,7 @@ export function useBookingFlow(slug: string, initialProduct: ProductListItemResp
 		setConfirmedStaffId(null);
 		availability.setSelectedDate(null);
 		setCommittedSignature(null);
-		setProvider(null);
-		setPaymentData(null);
+		resetPaymentRef.current();
 		setStep('when');
 		addOns.resetSelection();
 		setAnswers({});
@@ -383,8 +379,7 @@ export function useBookingFlow(slug: string, initialProduct: ProductListItemResp
 			setCommittedItemId(data?.itemId ?? null);
 			setLinkedFiles(answerPayload.some((a) => (a.fileIds?.length ?? 0) > 0));
 			setCommittedSignature(signature);
-			setProvider(null);
-			setPaymentData(null);
+			resetPaymentRef.current();
 			setStep('payment');
 		} catch (err: unknown) {
 			setError(err instanceof Error ? err.message : 'Could not save your details');
@@ -429,74 +424,24 @@ export function useBookingFlow(slug: string, initialProduct: ProductListItemResp
 		};
 	}, [customerPayload, address]);
 
-	const handleSubmitCheckout = useCallback(
-		async (stripePaymentIntentId?: string) => {
-			setSubmitting(true);
-			setError(null);
-			try {
-				const res = await fetch('/api/checkout/submit', {
-					method: 'POST',
-					headers: cartHeaders(),
-					body: JSON.stringify({
-						appointmentsSettings: { markAsScheduled: true },
-						...checkoutCustomer,
-						...(stripePaymentIntentId ? { stripePaymentIntentId } : {}),
-					}),
-				});
-				if (!res.ok) {
-					const data = await res.json().catch(() => null);
-					throw new Error(data?.error || 'Checkout failed');
-				}
-				const data = await res.json();
-				if (data.auth?.accessToken) {
-					await signIn('checkout-token', {
-						accessToken: data.auth.accessToken,
-						refreshToken: data.auth.refreshToken,
-						redirect: false,
-					});
-				}
-				clearCart();
-				router.push(`/thank-you?orderId=${encodeURIComponent(data.order?.id ?? '')}`);
-			} catch (err: unknown) {
-				setError(err instanceof Error ? err.message : 'Checkout failed');
-				setSubmitting(false);
-			}
-		},
-		[cartHeaders, checkoutCustomer, clearCart, router],
-	);
+	// The hold is gone (CART_EXPIRED at checkout): drop it and send the guest back to pick a time.
+	const onHoldLost = useCallback(() => {
+		clearCart();
+		setCommittedCartId(null);
+		setCommittedItemId(null);
+		setCommittedSignature(null);
+		setStep('when');
+	}, [clearCart]);
 
-	// Cash and "nothing to pay" show a confirm panel (PaymentStep); no auto-submit.
-	const handleSelectProvider = useCallback(
-		async (providerName: string) => {
-			setProvider(providerName);
-			setPaymentData(null);
-			setError(null);
-			setSubmitting(true);
-			try {
-				const res = await fetch('/api/checkout/start', {
-					method: 'POST',
-					headers: cartHeaders(),
-					body: JSON.stringify({ provider: providerName, ...checkoutCustomer }),
-				});
-				if (!res.ok) {
-					const data = await res.json().catch(() => null);
-					throw new Error(data?.error || 'Could not start checkout');
-				}
-				const data: CheckoutStartResponse = await res.json();
-				if (data.redirectUrl) {
-					window.location.href = data.redirectUrl;
-					return;
-				}
-				setPaymentData(data);
-			} catch (err: unknown) {
-				setError(err instanceof Error ? err.message : 'Could not start checkout');
-				setProvider(null);
-			} finally {
-				setSubmitting(false);
-			}
-		},
-		[cartHeaders, checkoutCustomer],
-	);
+	const payment = useCheckoutPayment({
+		providers,
+		cartHeaders,
+		checkoutCustomer,
+		enabled: committed && !isExpired,
+		setError,
+		onHoldLost,
+	});
+	resetPaymentRef.current = payment.reset;
 
 	const goToStep = useCallback((target: BookingStep) => {
 		setStep(target);
@@ -629,10 +574,11 @@ export function useBookingFlow(slug: string, initialProduct: ProductListItemResp
 
 		// Payment
 		providers,
-		provider,
-		paymentData,
-		handleSelectProvider,
-		handleSubmitCheckout,
+		provider: payment.provider,
+		paymentData: payment.paymentData,
+		handleSelectProvider: payment.selectProvider,
+		handleConfirmManual: payment.confirmManual,
+		handleSubmitCheckout: payment.submit,
 
 		// Flow
 		step,
@@ -641,7 +587,7 @@ export function useBookingFlow(slug: string, initialProduct: ProductListItemResp
 		canEnter,
 		stepCompleted,
 		committed,
-		submitting,
+		submitting: submitting || payment.submitting,
 		isExpired,
 
 		// Formatting

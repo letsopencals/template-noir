@@ -16,6 +16,7 @@ export interface AppointmentRowProps {
 		| 'from'
 		| 'to'
 		| 'status'
+		| 'pendingReason'
 		| 'numberOfAttendees'
 		| 'staffMemberId'
 		| 'staffMember'
@@ -97,7 +98,7 @@ export const AppointmentRow = memo(function AppointmentRow({ appointment: appt, 
 			</div>
 
 			<div className="flex flex-col items-end gap-2">
-				<StatusBadge kind="appointment" status={appt.status} />
+				<StatusBadge kind="appointment" status={appt.status} pendingReason={appt.pendingReason} />
 				<span
 					aria-hidden
 					className="text-[var(--color-ink-dim)] transition-transform duration-300 group-hover:translate-x-1 group-hover:text-[var(--color-primary)]"

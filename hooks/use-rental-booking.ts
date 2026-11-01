@@ -1,14 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { signIn, useSession } from 'next-auth/react';
-import type {
-	Address,
-	CartResponse,
-	CheckoutStartResponse,
-	ProductListVariant,
-} from '@opencals/storefront-sdk';
+import { useSession } from 'next-auth/react';
+import type { Address, CartResponse, ProductListVariant } from '@opencals/storefront-sdk';
 import type { RentalSlotTimes } from '@/lib/rental';
 import { useCart } from '@/contexts/cart-context';
 import { useBookingAddOns } from '@/hooks/use-booking-add-ons';
@@ -16,6 +10,7 @@ import { buildAnswerPayload, questionsComplete, useCheckoutQuestions } from '@/h
 import { useCartExpiry } from '@/hooks/use-cart-expiry';
 import { useFileUploads } from '@/hooks/use-file-upload';
 import { usePaymentProviders } from '@/hooks/use-payment-providers';
+import { useCheckoutPayment } from '@/hooks/use-checkout-payment';
 
 export interface RentalBookingInput {
 	/** The car product: `id` books, `slug` keys questions, `variant` keys add-ons. */
@@ -61,9 +56,8 @@ async function readJson<T>(res: Response): Promise<T | null> {
  */
 export function useRentalBooking(input: RentalBookingInput) {
 	const { car, slot, units, locationId, customAttributes, address, onSlotUnavailable } = input;
-	const router = useRouter();
 	const { data: session } = useSession();
-	const { cartId: contextCartId, setCart, clearCart } = useCart();
+	const { cartId: contextCartId, setCart } = useCart();
 
 	// Details
 	const [email, setEmail] = useState('');
@@ -96,10 +90,7 @@ export function useRentalBooking(input: RentalBookingInput) {
 
 	// Hold + payment
 	const [reservation, setReservation] = useState<Reservation | null>(null);
-	const [provider, setProvider] = useState<string | null>(null);
-	const [paymentData, setPaymentData] = useState<CheckoutStartResponse | null>(null);
 	const [reserving, setReserving] = useState(false);
-	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 	const [slotTaken, setSlotTaken] = useState(false);
@@ -173,14 +164,6 @@ export function useRentalBooking(input: RentalBookingInput) {
 
 	const stale = reservation !== null && reservation.signature !== signature;
 	const held = reservation !== null && !stale && !isExpired;
-
-	// A new hold invalidates any started payment (amounts may differ).
-	useEffect(() => {
-		if (!held) {
-			setProvider(null);
-			setPaymentData(null);
-		}
-	}, [held]);
 
 	useEffect(() => {
 		setSlotTaken(false);
@@ -308,73 +291,20 @@ export function useRentalBooking(input: RentalBookingInput) {
 		[customerId, customer, address],
 	);
 
-	const submitCheckout = useCallback(
-		async (stripePaymentIntentId?: string) => {
-			setSubmitting(true);
-			setError(null);
-			try {
-				const res = await fetch('/api/checkout/submit', {
-					method: 'POST',
-					headers: cartHeaders(),
-					body: JSON.stringify({
-						appointmentsSettings: { markAsScheduled: true },
-						...checkoutCustomer,
-						...(stripePaymentIntentId ? { stripePaymentIntentId } : {}),
-					}),
-				});
-				const data = await readJson<{
-					error?: string;
-					order?: { id?: string };
-					customer?: { id?: string; email?: string; firstName?: string; lastName?: string };
-					auth?: { accessToken?: string; refreshToken?: string };
-				}>(res);
-				if (!res.ok) throw new Error(data?.error || 'Checkout failed');
-				if (data?.auth?.accessToken) {
-					await signIn('checkout-token', {
-						accessToken: data.auth.accessToken,
-						refreshToken: data.auth.refreshToken,
-						redirect: false,
-					});
-				}
-				clearCart();
-				router.push(`/thank-you?orderId=${encodeURIComponent(data?.order?.id ?? '')}`);
-			} catch (err) {
-				setError(err instanceof Error ? err.message : 'Checkout failed');
-				setSubmitting(false);
-			}
-		},
-		[cartHeaders, checkoutCustomer, clearCart, router],
-	);
+	// The hold is gone (CART_EXPIRED at checkout): back to the dates, like a taken slot.
+	const onHoldLost = useCallback(() => {
+		setSlotTaken(true);
+		setReservation(null);
+		onSlotUnavailable?.();
+	}, [onSlotUnavailable]);
 
-	const selectProvider = useCallback(
-		async (providerName: string) => {
-			if (!held) return;
-			setProvider(providerName);
-			setPaymentData(null);
-			setError(null);
-			setSubmitting(true);
-			try {
-				const res = await fetch('/api/checkout/start', {
-					method: 'POST',
-					headers: cartHeaders(),
-					body: JSON.stringify({ provider: providerName, ...checkoutCustomer }),
-				});
-				const data = await readJson<CheckoutStartResponse & { error?: string }>(res);
-				if (!res.ok || !data) throw new Error(data?.error || 'Could not start checkout');
-				if (data.redirectUrl) {
-					window.location.href = data.redirectUrl;
-					return;
-				}
-				setPaymentData(data);
-			} catch (err) {
-				setError(err instanceof Error ? err.message : 'Could not start checkout');
-				setProvider(null);
-			} finally {
-				setSubmitting(false);
-			}
-		},
-		[held, cartHeaders, checkoutCustomer],
-	);
+	const payment = useCheckoutPayment({ providers, cartHeaders, checkoutCustomer, enabled: held, setError, onHoldLost });
+	const { reset: resetPayment } = payment;
+
+	// A new hold invalidates any started payment (amounts may differ).
+	useEffect(() => {
+		if (!held) resetPayment();
+	}, [held, resetPayment]);
 
 	return {
 		// extras
@@ -413,11 +343,12 @@ export function useRentalBooking(input: RentalBookingInput) {
 		isExpired,
 		// payment
 		providers,
-		provider,
-		paymentData,
-		selectProvider,
-		submitCheckout,
-		submitting,
+		provider: payment.provider,
+		paymentData: payment.paymentData,
+		selectProvider: payment.selectProvider,
+		confirmManual: payment.confirmManual,
+		submitCheckout: payment.submit,
+		submitting: payment.submitting,
 		error,
 		setError,
 	};

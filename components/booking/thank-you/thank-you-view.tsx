@@ -1,13 +1,13 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import useSWR from 'swr';
 import { useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { useReducedMotion } from '@/components/motion/use-reduced-motion';
-import type { OrderDetailAppointment, OrderDetailResponse } from '@opencals/storefront-sdk';
+import type { OrderDetailAppointment, OrderDetailResponse, PaymentInstructions } from '@opencals/storefront-sdk';
 import { fetcher } from '@/lib/fetcher';
 import { formatPrice } from '@/lib/format';
 import { siteConfig } from '@/lib/site-config';
@@ -15,7 +15,9 @@ import { DURATION, EASE_OUT } from '@/components/motion/easing';
 import { Reveal } from '@/components/motion/reveal';
 import { buttonClasses } from '@/components/ui/button';
 import { BookingCard } from './booking-card';
-import { toConfirmedBooking } from './confirmed-booking';
+import { orderPendingReason, toConfirmedBooking } from './confirmed-booking';
+import { PaymentInstructionsPanel } from './payment-instructions';
+import { recallPaymentInstructions } from '@/lib/checkout-payment';
 import { icsHref } from './ics';
 
 const CHECK_INITIAL = { pathLength: 0 };
@@ -42,6 +44,24 @@ function Row({ label, value, accent = false }: { label: string; value: string; a
 		</div>
 	);
 }
+
+/** Payment status for the summary. Never a raw value or a blank. */
+function paymentLabel(order: OrderDetailResponse, provider: string | null): string {
+	if (order.isFullyPaid || order.paymentStatus === 'paid') return 'Paid';
+	if (order.paymentStatus === 'partially-paid') return 'Part paid';
+	if (order.paymentStatus === 'voided') return 'Cancelled — not charged';
+	if (provider === 'stripe_invoice') return 'Invoice due';
+	if (provider === 'bank_transfer') return 'Transfer due';
+	if (provider === 'cash') return 'Pay at handover';
+	return 'Unpaid';
+}
+
+const HEADLINE = {
+	confirmed: { eyebrow: 'Booking confirmed', title: 'It\u2019s booked.' },
+	awaiting_payment: { eyebrow: 'Awaiting payment', title: 'Booking received.' },
+	awaiting_approval: { eyebrow: 'Awaiting confirmation', title: 'Booking received.' },
+	unknown: { eyebrow: 'Booking received', title: 'Booking received.' },
+} as const;
 
 function OrderSkeleton() {
 	return (
@@ -72,6 +92,25 @@ export function ThankYouView() {
 	const calendar = useMemo(() => (bookings.length > 0 ? icsHref(bookings, order?.name ?? '') : null), [bookings, order?.name]);
 	const email = order?.customerEmail ?? order?.customer?.email ?? null;
 
+	// Payment instructions come back from checkout submit only; they're kept for this tab (read after mount).
+	const [instructions, setInstructions] = useState<PaymentInstructions | null>(null);
+	useEffect(() => {
+		setInstructions(orderId ? recallPaymentInstructions(orderId) : null);
+	}, [orderId]);
+
+	// "Awaiting" only for pending bookings with a reason; a pending booking without one is being confirmed.
+	const pending = orderPendingReason(bookings);
+	const state = pending ?? (order && bookings.length > 0 ? 'confirmed' : 'unknown');
+	const headline = HEADLINE[state];
+	const owes = order ? !order.isFullyPaid && order.paymentStatus !== 'voided' && order.paymentStatus !== 'paid' : false;
+	const showPayment = instructions !== null || (owes && (pending === 'awaiting_payment' || !!order?.paymentDueAt));
+	const lede =
+		pending === 'awaiting_payment'
+			? 'We hold the car for you and confirm the booking as soon as your payment arrives.'
+			: pending === 'awaiting_approval'
+				? 'The concierge reviews every booking like this one and emails you as soon as it is confirmed.'
+				: null;
+
 	return (
 		<section className="pt-32 pb-20 lg:pt-40 lg:pb-28">
 			<div className="mx-auto max-w-[1200px] px-6 lg:px-10">
@@ -79,19 +118,20 @@ export function ThankYouView() {
 					<Check />
 				</Reveal>
 				<Reveal delay={0.08}>
-					<p className="eyebrow mt-8">{order?.name ? `Booking #${order.name}` : 'Booking received'}</p>
+					<p className="eyebrow mt-8">{order?.name ? `Booking #${order.name} · ${headline.eyebrow}` : headline.eyebrow}</p>
 				</Reveal>
 				<Reveal delay={0.14}>
-					<h1 className="heading-display mt-4 text-4xl leading-[0.95] text-[var(--color-ink)] sm:text-6xl">It&rsquo;s booked.</h1>
+					<h1 className="heading-display mt-4 text-4xl leading-[0.95] text-[var(--color-ink)] sm:text-6xl">{headline.title}</h1>
 				</Reveal>
 				<Reveal delay={0.2}>
 					<p className="mt-6 max-w-xl text-base leading-relaxed text-[var(--color-ink-muted)]">
+						{lede ? `${lede} ` : null}
 						{email ? (
 							<>
-								A confirmation is on its way to <span className="text-[var(--color-ink)]">{email}</span>. All times are Dubai time.
+								{pending ? 'The details are on their way to' : 'A confirmation is on its way to'} <span className="text-[var(--color-ink)]">{email}</span>. All times are Dubai time.
 							</>
 						) : (
-							'A confirmation is on its way by email. All times are Dubai time.'
+							`${pending ? 'The details are on their way by email.' : 'A confirmation is on its way by email.'} All times are Dubai time.`
 						)}
 					</p>
 				</Reveal>
@@ -121,6 +161,9 @@ export function ThankYouView() {
 						</div>
 
 						<aside className="space-y-4 lg:sticky lg:top-28 lg:self-start">
+							{showPayment ? (
+								<PaymentInstructionsPanel instructions={instructions} reference={order?.name ?? null} paymentDueAt={order?.paymentDueAt ?? null} />
+							) : null}
 							{order ? (
 								<div className="border border-[var(--color-line)] bg-[var(--color-surface)] px-6 py-5">
 									<p className="eyebrow">Payment</p>
@@ -128,7 +171,7 @@ export function ThankYouView() {
 										<Row label="Subtotal" value={formatPrice(order.subtotal ?? 0, currency)} />
 										{(order.totalTax ?? 0) > 0 ? <Row label={order.taxesIncluded ? 'VAT (included)' : 'VAT'} value={formatPrice(order.totalTax, currency)} /> : null}
 										<Row label="Total" value={formatPrice(order.total ?? 0, currency)} accent />
-										<Row label="Status" value={order.isFullyPaid ? 'Paid' : order.paymentStatus === 'partially-paid' ? 'Part paid' : 'Pay later'} />
+										<Row label="Status" value={paymentLabel(order, instructions?.provider ?? null)} />
 									</div>
 								</div>
 							) : null}

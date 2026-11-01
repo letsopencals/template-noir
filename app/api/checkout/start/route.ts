@@ -5,7 +5,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '@/lib/api-error-handler';
 import { toCheckoutCustomer } from '../customer-payload';
 
-const PROVIDERS = ['stripe', 'cash', 'bank_transfer', 'shopify', 'no_payment_required'] as const;
+/** Provider ids are short snake_case names (stripe, cash, bank_transfer, stripe_invoice, …). */
+const PROVIDER_NAME = /^[a-z][a-z0-9_]{0,63}$/;
 
 /**
  * POST { provider, customer?, deliveryAddress? } → CheckoutStartResponse.
@@ -17,10 +18,11 @@ export async function POST(request: NextRequest) {
 
 	try {
 		const raw = (await request.json()) as Record<string, unknown>;
-		const provider = PROVIDERS.find((p) => p === raw.provider);
-		if (!provider) {
-			return NextResponse.json({ error: 'Unknown payment provider' }, { status: 400 });
+		// Any provider the store offers goes through; the API rejects ones it doesn't have.
+		if (typeof raw.provider !== 'string' || !PROVIDER_NAME.test(raw.provider)) {
+			return NextResponse.json({ error: 'Choose a payment method' }, { status: 400 });
 		}
+		const provider = raw.provider as StartCheckout['provider'];
 		const customer = toCheckoutCustomer(raw.customer, raw.deliveryAddress);
 		const token = await getAccessToken();
 		const { data } = await CheckoutService.start({

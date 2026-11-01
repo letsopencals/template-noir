@@ -4,6 +4,7 @@ import { clsx } from 'clsx';
 import type { CheckoutStartResponse, CustomerProviderCatalogItem } from '@opencals/storefront-sdk';
 import { StripePayment } from '@/components/booking/stripe-payment';
 import { Button } from '@/components/ui/button';
+import { checkoutModeOf, providerLabel } from '@/lib/checkout-payment';
 
 interface PaymentStepProps {
 	providers: CustomerProviderCatalogItem[];
@@ -14,7 +15,8 @@ interface PaymentStepProps {
 	onSelectProvider: (providerName: string) => void;
 	onStripeSuccess: (paymentIntentId: string) => void;
 	onStripeError: (message: string) => void;
-	onSubmitCash: () => void;
+	/** Manual methods (cash, bank transfer, invoice) and "nothing to pay": start + submit. */
+	onConfirmManual: () => void;
 	/** Copy for the pay-later (cash) confirmation. */
 	cashTitle?: string;
 	cashBody?: string;
@@ -35,17 +37,17 @@ export function PaymentStep({
 	onSelectProvider,
 	onStripeSuccess,
 	onStripeError,
-	onSubmitCash,
+	onConfirmManual,
 	cashTitle = 'Pay at handover',
 	cashBody = 'Nothing is charged now. You pay the rental when we hand over the keys.',
 	bare = false,
 }: PaymentStepProps) {
-	// Branch on the RESPONSE provider for the fallback: when nothing is collectible the backend
-	// overrides the requested provider with "no payment required" (cast: the pinned SDK's union
-	// predates it). clientSecret is null in that case, so showStripe/showCash won't match.
-	const showNoPayment = (paymentData?.provider as string) === 'no_payment_required';
-	const clientSecret = !showNoPayment && provider === 'stripe' ? paymentData?.clientSecret : null;
-	const showCash = !showNoPayment && provider === 'cash' && paymentData;
+	// Route on the chosen method's checkoutMode: only `internal` (card) mounts a payment form; manual methods and
+	// "nothing to pay" confirm with one button that starts and submits checkout.
+	const selected = provider ? (providers.find((p) => p.name === provider) ?? { name: provider }) : null;
+	const mode = selected ? checkoutModeOf(selected) : null;
+	const clientSecret = mode === 'internal' ? paymentData?.clientSecret : null;
+	const confirm = selected && (mode === 'manual' || mode === 'none') ? manualCopy(selected, { cashTitle, cashBody }) : null;
 
 	const list =
 		providers.length === 0 ? (
@@ -80,7 +82,7 @@ export function PaymentStep({
 							</span>
 							<span className="min-w-0 flex-1">
 								<span className="block text-sm text-[var(--color-ink)]">
-									{p.name === 'cash' ? cashTitle : p.displayName}
+									{p.name === 'cash' ? cashTitle : providerLabel(p)}
 								</span>
 								{p.description ? (
 									<span className="mt-0.5 block text-xs text-[var(--color-ink-muted)]">{p.description}</span>
@@ -121,21 +123,39 @@ export function PaymentStep({
 				/>
 			) : null}
 
-			{showNoPayment ? (
-				<ConfirmPanel
-					title="Nothing to pay"
-					body="This booking is fully covered. Confirm to finish."
-					submitting={submitting}
-					disabled={isExpired}
-					onConfirm={onSubmitCash}
-				/>
-			) : null}
-
-			{showCash ? (
-				<ConfirmPanel title={cashTitle} body={cashBody} submitting={submitting} disabled={isExpired} onConfirm={onSubmitCash} />
+			{confirm ? (
+				<ConfirmPanel title={confirm.title} body={confirm.body} submitting={submitting} disabled={isExpired} onConfirm={onConfirmManual} />
 			) : null}
 		</div>
 	);
+}
+
+/** Confirm-panel copy for a manual or no-payment method. Never promises "pay at handover" for invoices or transfers. */
+function manualCopy(
+	p: { name: string; displayName?: string | null; description?: string | null },
+	cash: { cashTitle: string; cashBody: string },
+): { title: string; body: string } {
+	switch (p.name) {
+		case 'no_payment_required':
+			return { title: 'Nothing to pay', body: 'This booking is fully covered. Confirm to finish.' };
+		case 'cash':
+			return { title: cash.cashTitle, body: cash.cashBody };
+		case 'bank_transfer':
+			return {
+				title: providerLabel(p),
+				body: 'Nothing is charged now. Confirm, and we show our bank details and your payment reference on the next screen and by email.',
+			};
+		case 'stripe_invoice':
+			return {
+				title: providerLabel(p),
+				body: 'Nothing is charged now. Confirm, and we email you an invoice with a secure link to pay it online.',
+			};
+		default:
+			return {
+				title: providerLabel(p),
+				body: p.description?.trim() || 'Nothing is charged now. Confirm, and we email you how to pay.',
+			};
+	}
 }
 
 function ConfirmPanel({

@@ -21,10 +21,21 @@ interface Step {
 	detail: string;
 }
 
+/** First timeline step: confirmed, or what the booking still waits for. */
+function firstStep(b: ConfirmedBooking): Step {
+	if (b.pendingReason === 'awaiting_payment') {
+		return { label: 'Awaiting payment', when: 'Now', detail: 'We confirm the booking as soon as your payment arrives.' };
+	}
+	if (b.pendingReason === 'awaiting_approval') {
+		return { label: 'Awaiting confirmation', when: 'Now', detail: 'The concierge reviews your booking and emails you once it is confirmed.' };
+	}
+	return { label: 'Confirmed', when: 'Now', detail: 'Your confirmation is on its way by email.' };
+}
+
 function rentalSteps(b: ConfirmedBooking): Step[] {
 	const garage = siteConfig.contact.address.replace(/\n/g, ', ');
 	return [
-		{ label: 'Confirmed', when: 'Now', detail: 'Your confirmation is on its way by email.' },
+		firstStep(b),
 		{
 			label: b.delivered ? 'Delivery & handover' : 'Collect from the garage',
 			when: `${day(b.fromDate)}${b.handoverWindow ? ` · ${b.handoverWindow}` : ''}`,
@@ -47,7 +58,7 @@ function rentalSteps(b: ConfirmedBooking): Step[] {
 function chauffeurSteps(b: ConfirmedBooking): Step[] {
 	const time = `${TIME.format(new Date(b.from))}–${TIME.format(new Date(b.to))}`;
 	return [
-		{ label: 'Confirmed', when: 'Now', detail: 'Your confirmation is on its way by email.' },
+		firstStep(b),
 		{
 			label: 'Pick-up',
 			when: `${day(b.fromDate)} · ${time}`,

@@ -8,4 +8,7 @@ setupOpencals({
 	apiKey: process.env.OPENCALS_API_KEY,
 	buyerIp: nextBuyerIp,
 	logging: process.env.NODE_ENV === 'development',
+	// The SDK swallows HTTP errors unless this is set; every route relies on throws.
+	throwOnError: true,
 });
+

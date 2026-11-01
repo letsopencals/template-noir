@@ -298,7 +298,7 @@ export function BookingView({
 										onSelectProvider={flow.handleSelectProvider}
 										onStripeSuccess={(piId) => flow.handleSubmitCheckout(piId)}
 										onStripeError={(msg) => flow.setError(msg)}
-										onSubmitCash={() => flow.handleSubmitCheckout()}
+										onConfirmManual={() => void flow.handleConfirmManual()}
 										cashTitle="Pay your chauffeur"
 										cashBody="Nothing is charged now. You settle the journey on the day."
 									/>

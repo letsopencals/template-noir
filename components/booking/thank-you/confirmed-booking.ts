@@ -1,4 +1,4 @@
-import type { OrderDetailAppointment } from '@opencals/storefront-sdk';
+import type { OrderDetailAppointment, StorefrontAppointmentPendingReason } from '@opencals/storefront-sdk';
 import { fleetContent, siteConfig } from '@/lib/site-config';
 import { localMidnight } from '@/lib/rental';
 import { getProductImage } from '@/lib/format';
@@ -28,6 +28,11 @@ export interface ConfirmedBooking {
 	chauffeur: string | null;
 	depositAed: number | null;
 	status: string;
+	/**
+	 * Why the booking still waits: set only for `pending` appointments with a reason. A pending booking without
+	 * one (an automatic store confirming it in the background right after checkout) counts as confirmed.
+	 */
+	pendingReason: StorefrontAppointmentPendingReason | null;
 }
 
 const TZ = siteConfig.timezone;
@@ -71,6 +76,7 @@ export function toConfirmedBooking(a: OrderDetailAppointment): ConfirmedBooking 
 		chauffeur: staff || null,
 		depositAed: content?.depositAed ?? null,
 		status: (a.status ?? '').toLowerCase(),
+		pendingReason: a.status === 'pending' && a.pendingReason ? a.pendingReason : null,
 	};
 }
 
@@ -88,4 +94,11 @@ export function windowInstants(date: string, window: string | null): [number, nu
 	const midnight = localMidnight(date, TZ);
 	const at = (h: string, mi: string) => midnight + (Number(h) * 60 + Number(mi)) * 60_000;
 	return [at(m[1]!, m[2]!), at(m[3]!, m[4]!)];
+}
+
+/** The order's waiting state: awaiting payment wins over awaiting approval; null when every booking is confirmed. */
+export function orderPendingReason(bookings: ConfirmedBooking[]): StorefrontAppointmentPendingReason | null {
+	if (bookings.some((b) => b.pendingReason === 'awaiting_payment')) return 'awaiting_payment';
+	if (bookings.some((b) => b.pendingReason === 'awaiting_approval')) return 'awaiting_approval';
+	return null;
 }
